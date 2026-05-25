@@ -520,7 +520,7 @@
     private static string StateText(int state) => state switch
     {
         Booking.Booked => "Booked",
-        Booking.ConfirmationWait => "Waiting confirmation",
+        Booking.ConfirmationWait => "Waiting for confirmation",
         Booking.Unused => "Unused",
         Booking.ConfirmationRejected => "Rejected",
         Booking.Cancelled => "Cancelled",
