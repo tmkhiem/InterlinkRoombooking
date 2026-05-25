@@ -1,0 +1,6 @@
+- Cho mọi người book lịch không giới hạn
+- Riêng phòng họp R1 thì phải duyệt
+- Thêm trường: "Người đặt", "ghi chú"
+- Phân quyền: ko được xoá của người khác
+- Phân quyền theo từng phòng
+- Thông báo qua telegram ai vừa mới đặt phòng họp

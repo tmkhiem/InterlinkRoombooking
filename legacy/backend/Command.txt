@@ -1,0 +1,2 @@
+﻿Scaffold-DbContext "DataSource=roombooking.db" -t Booking,State Microsoft.EntityFrameworkCore.Sqlite -Force -OutputDir Models
+Scaffold-DbContext "Name=Db" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models -Context RoombookingContext -Force
