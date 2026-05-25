@@ -1,0 +1,174 @@
+.booking-page {
+    padding: 1rem;
+}
+
+.booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.booking-header h1 {
+    margin: 0;
+}
+
+.role-pill {
+    display: inline-block;
+    margin-left: .5rem;
+    padding: .1rem .4rem;
+    border-radius: .5rem;
+    background: #d71920;
+    color: white;
+    font-size: .8rem;
+}
+
+.logout-link {
+    color: #005c9a;
+    font-weight: 600;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-bottom: .8rem;
+}
+
+button {
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: .3rem;
+    padding: .35rem .7rem;
+    cursor: pointer;
+}
+
+button.primary {
+    background: #005c9a;
+    border-color: #005c9a;
+    color: white;
+}
+
+button.danger {
+    background: #d71920;
+    border-color: #d71920;
+    color: white;
+}
+
+.error-banner {
+    color: #d71920;
+    margin: .5rem 0;
+}
+
+.calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 1100px;
+}
+
+.calendar-table th,
+.calendar-table td {
+    border: 1px solid #d0d0d0;
+    padding: .35rem;
+    text-align: center;
+}
+
+.day-cell {
+    width: 140px;
+    font-weight: 600;
+    background: #f5f5f5;
+}
+
+.day-cell span {
+    font-weight: 400;
+}
+
+.day-row-top td {
+    border-top: 2px solid #7a7a7a;
+}
+
+.day-row-middle td,
+.day-row-bottom td {
+    border-top: none;
+}
+
+.day-row-bottom td {
+    border-bottom: 2px solid #7a7a7a;
+}
+
+.slot-cell {
+    height: 2rem;
+    font-size: .8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.slot-cell.occupied {
+    cursor: pointer;
+}
+
+.room-1 {
+    background: #c8e6c9;
+}
+
+.room-2 {
+    background: #bbdefb;
+}
+
+.room-3 {
+    background: #ffcc80;
+}
+
+.state-1 {
+    border: 2px dashed #333 !important;
+    background: repeating-linear-gradient(45deg, rgba(255,255,255,.5) 0 10px, rgba(255,255,255,0) 10px 20px);
+}
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-card {
+    background: white;
+    width: min(500px, calc(100vw - 2rem));
+    border-radius: .5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.modal-card h2 {
+    margin: 0 0 .5rem 0;
+}
+
+.modal-card label {
+    font-weight: 600;
+}
+
+.modal-card input,
+.modal-card select,
+.modal-card textarea {
+    width: 100%;
+    padding: .4rem;
+    border: 1px solid #ccc;
+    border-radius: .3rem;
+    box-sizing: border-box;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+    margin-top: .5rem;
+}

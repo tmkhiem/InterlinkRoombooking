@@ -1,0 +1,49 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@layout Layout.MainLayout
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager Navigation
+
+<PageTitle>Login</PageTitle>
+
+<div class="login-page">
+    <div class="login-card">
+        <h1>Room Booking</h1>
+        <p>Login with your Attendance employee account.</p>
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <p class="login-error">@_error</p>
+        }
+
+        <form method="post" action="/auth/login">
+            <label for="employeeId">Employee ID</label>
+            <input id="employeeId" name="employeeId" required maxlength="10" />
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required />
+
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        var absoluteUri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (!QueryHelpers.ParseQuery(absoluteUri.Query).TryGetValue("error", out var errorCode))
+        {
+            return;
+        }
+
+        _error = errorCode.ToString() switch
+        {
+            "invalid" => "Invalid employee ID or password.",
+            "missing" => "Please provide employee ID and password.",
+            _ => "Login failed."
+        };
+    }
+}

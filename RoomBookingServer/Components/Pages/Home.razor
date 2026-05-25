@@ -1,7 +1,458 @@
-﻿@page "/"
+@page "/"
+@attribute [Authorize]
+@using System.Globalization
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@using RoomBookingServer.Models.Db.Roombooking
+@inject IDbContextFactory<RoombookingContext> RoomDbFactory
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Room Booking</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="booking-page">
+    <header class="booking-header">
+        <div>
+            <h1>Weekly Room Booking</h1>
+            <p>@_displayName (@_employeeId) @if (_isAdmin) { <span class="role-pill">Admin</span> }</p>
+        </div>
+        <a href="/auth/logout" class="logout-link">Logout</a>
+    </header>
 
-Welcome to your new app.
+    <section class="toolbar">
+        <button @onclick="PreviousWeek">Previous week</button>
+        <strong>Week of @_weekStart.ToString("dd/MM/yyyy")</strong>
+        <button @onclick="NextWeek">Next week</button>
+        <button class="primary" @onclick="OpenNewMeeting">Add meeting</button>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <p class="error-banner">@_error</p>
+    }
+
+    <table class="calendar-table">
+        <thead>
+            <tr>
+                <th>Day / Room</th>
+                @foreach (var hour in Hours)
+                {
+                    <th>@($"{hour:00}:00")</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @for (var dayOffset = 0; dayOffset < 7; dayOffset++)
+            {
+                var date = _weekStart.AddDays(dayOffset);
+                for (var laneIndex = 0; laneIndex < Rooms.Length; laneIndex++)
+                {
+                    var room = Rooms[laneIndex];
+                    <tr class="@GetLaneRowClass(laneIndex)">
+                        @if (laneIndex == 0)
+                        {
+                            <td class="day-cell" rowspan="3">
+                                @date.ToString("dddd", CultureInfo.InvariantCulture)<br />
+                                <span>@date.ToString("dd/MM/yyyy")</span>
+                            </td>
+                        }
+
+                        @foreach (var hour in Hours)
+                        {
+                            var booking = GetBookingForCell(date, room, hour);
+                            <td class="@(booking is null ? "slot-cell" : $"slot-cell occupied room-{room} state-{booking.State}")"
+                                @onclick="() => OnCellClicked(date, room, hour)">
+                                @if (booking is not null)
+                                {
+                                    <span>@booking.Title</span>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (_showDetails && _selectedBooking is not null)
+{
+    <div class="modal-backdrop">
+        <div class="modal-card">
+            <h2>@_selectedBooking.Title</h2>
+            <p><strong>Date:</strong> @_selectedBooking.Date.ToString("dd/MM/yyyy")</p>
+            <p><strong>Time:</strong> @_selectedBooking.StartTime.ToString("HH:mm") - @_selectedBooking.EndTime.ToString("HH:mm")</p>
+            <p><strong>Room:</strong> R@_selectedBooking.Room</p>
+            <p><strong>Creator:</strong> @_selectedBooking.Creator (@_selectedBooking.Name)</p>
+            <p><strong>Status:</strong> @StateText(_selectedBooking.State)</p>
+            @if (!string.IsNullOrWhiteSpace(_selectedBooking.Note))
+            {
+                <p><strong>Note:</strong> @_selectedBooking.Note</p>
+            }
+
+            <div class="modal-actions">
+                @if (CanEdit(_selectedBooking))
+                {
+                    <button @onclick="OpenEditMeeting">Edit</button>
+                }
+                @if (CanDelete(_selectedBooking))
+                {
+                    <button class="danger" @onclick="DeleteSelectedMeeting">Delete</button>
+                }
+                @if (CanConfirm(_selectedBooking))
+                {
+                    <button class="primary" @onclick="ConfirmSelectedMeeting">Confirm</button>
+                }
+                <button @onclick="CloseDetails">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showEditor)
+{
+    <div class="modal-backdrop">
+        <div class="modal-card">
+            <h2>@(_editor.RoomBookingId.HasValue ? "Edit meeting" : "Add meeting")</h2>
+
+            <label>Title</label>
+            <input @bind="_editor.Title" />
+
+            <label>Date</label>
+            <input type="date" value="@_editor.DateText" @onchange="e => _editor.DateText = e.Value?.ToString() ?? string.Empty" />
+
+            <label>Room</label>
+            <select @bind="_editor.Room">
+                <option value="1">R1 (confirmation required)</option>
+                <option value="2">R2</option>
+                <option value="3">R3</option>
+            </select>
+
+            <label>Start</label>
+            <input type="time" step="60" value="@_editor.StartTimeText" @onchange="e => _editor.StartTimeText = e.Value?.ToString() ?? string.Empty" />
+
+            <label>End</label>
+            <input type="time" step="60" value="@_editor.EndTimeText" @onchange="e => _editor.EndTimeText = e.Value?.ToString() ?? string.Empty" />
+
+            <label>Note</label>
+            <textarea rows="3" @bind="_editor.Note"></textarea>
+
+            <div class="modal-actions">
+                <button class="primary" @onclick="SaveMeetingAsync">Save</button>
+                <button @onclick="CloseEditor">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly int[] Rooms = [1, 2, 3];
+    private static readonly int[] Hours = Enumerable.Range(7, 14).ToArray();
+
+    private DateOnly _weekStart = StartOfWeek(DateOnly.FromDateTime(DateTime.Today));
+    private List<Booking> _bookings = [];
+    private Booking? _selectedBooking;
+    private string _employeeId = string.Empty;
+    private string _displayName = string.Empty;
+    private bool _isAdmin;
+    private string? _error;
+
+    private bool _showDetails;
+    private bool _showEditor;
+    private MeetingEditorModel _editor = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+
+        _employeeId = user.FindFirstValue("employee_id") ?? user.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        _displayName = user.FindFirstValue(ClaimTypes.Name) ?? _employeeId;
+        _isAdmin = user.IsInRole("Admin");
+
+        await LoadWeekAsync();
+    }
+
+    private async Task LoadWeekAsync()
+    {
+        await using var db = await RoomDbFactory.CreateDbContextAsync();
+        var end = _weekStart.AddDays(6);
+
+        _bookings = await db.Bookings
+            .Where(b => b.Date >= _weekStart && b.Date <= end)
+            .OrderBy(b => b.Date)
+            .ThenBy(b => b.StartTime)
+            .ToListAsync();
+    }
+
+    private static DateOnly StartOfWeek(DateOnly date)
+    {
+        var offset = date.DayOfWeek switch
+        {
+            DayOfWeek.Sunday => -6,
+            _ => 1 - (int)date.DayOfWeek
+        };
+
+        return date.AddDays(offset);
+    }
+
+    private Booking? GetBookingForCell(DateOnly date, int room, int hour)
+    {
+        var slotStart = new TimeOnly(hour, 0);
+        var slotEnd = new TimeOnly(hour + 1, 0);
+
+        return _bookings.FirstOrDefault(b =>
+            b.Date == date &&
+            b.Room == room &&
+            b.StartTime < slotEnd &&
+            slotStart < b.EndTime);
+    }
+
+    private string GetLaneRowClass(int laneIndex) => laneIndex switch
+    {
+        0 => "day-row day-row-top",
+        1 => "day-row day-row-middle",
+        _ => "day-row day-row-bottom"
+    };
+
+    private void OnCellClicked(DateOnly date, int room, int hour)
+    {
+        _error = null;
+        var booking = GetBookingForCell(date, room, hour);
+        if (booking is null)
+        {
+            return;
+        }
+
+        _selectedBooking = booking;
+        _showDetails = true;
+    }
+
+    private void OpenNewMeeting()
+    {
+        _error = null;
+        _editor = MeetingEditorModel.CreateNew(_weekStart);
+        _showEditor = true;
+    }
+
+    private void OpenEditMeeting()
+    {
+        if (_selectedBooking is null || !CanEdit(_selectedBooking))
+        {
+            return;
+        }
+
+        _error = null;
+        _editor = MeetingEditorModel.FromBooking(_selectedBooking);
+        _showDetails = false;
+        _showEditor = true;
+    }
+
+    private async Task SaveMeetingAsync()
+    {
+        _error = null;
+
+        if (!DateOnly.TryParse(_editor.DateText, out var date))
+        {
+            _error = "Invalid date.";
+            return;
+        }
+
+        if (!TimeOnly.TryParse(_editor.StartTimeText, out var startTime) || !TimeOnly.TryParse(_editor.EndTimeText, out var endTime))
+        {
+            _error = "Invalid time.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_editor.Title))
+        {
+            _error = "Title is required.";
+            return;
+        }
+
+        if (startTime >= endTime)
+        {
+            _error = "Start time must be before end time.";
+            return;
+        }
+
+        if (_editor.Room is < 1 or > 3)
+        {
+            _error = "Room is invalid.";
+            return;
+        }
+
+        await using var db = await RoomDbFactory.CreateDbContextAsync();
+
+        var overlapQuery = db.Bookings.Where(b =>
+            b.Date == date &&
+            b.Room == _editor.Room &&
+            b.StartTime < endTime &&
+            startTime < b.EndTime);
+
+        if (_editor.RoomBookingId.HasValue)
+        {
+            overlapQuery = overlapQuery.Where(b => b.RoomBookingId != _editor.RoomBookingId.Value);
+        }
+
+        if (await overlapQuery.AnyAsync())
+        {
+            _error = "Booking overlaps with an existing meeting.";
+            return;
+        }
+
+        Booking booking;
+        if (_editor.RoomBookingId.HasValue)
+        {
+            booking = await db.Bookings.FirstOrDefaultAsync(b => b.RoomBookingId == _editor.RoomBookingId.Value)
+                      ?? throw new InvalidOperationException("Booking not found.");
+
+            if (!CanEdit(booking))
+            {
+                _error = "Only the creator can edit this meeting.";
+                return;
+            }
+        }
+        else
+        {
+            booking = new Booking
+            {
+                Creator = _employeeId,
+                Name = _displayName
+            };
+            db.Bookings.Add(booking);
+        }
+
+        booking.Title = _editor.Title.Trim();
+        booking.Date = date;
+        booking.Room = _editor.Room;
+        booking.StartTime = startTime;
+        booking.EndTime = endTime;
+        booking.Note = string.IsNullOrWhiteSpace(_editor.Note) ? null : _editor.Note.Trim();
+        booking.State = booking.Room == 1 ? Booking.ConfirmationWait : Booking.Booked;
+
+        await db.SaveChangesAsync();
+
+        _showEditor = false;
+        await LoadWeekAsync();
+    }
+
+    private async Task DeleteSelectedMeeting()
+    {
+        if (_selectedBooking is null || !CanDelete(_selectedBooking))
+        {
+            _error = "You are not allowed to delete this meeting.";
+            return;
+        }
+
+        await using var db = await RoomDbFactory.CreateDbContextAsync();
+        var booking = await db.Bookings.FirstOrDefaultAsync(b => b.RoomBookingId == _selectedBooking.RoomBookingId);
+        if (booking is null)
+        {
+            _error = "Meeting not found.";
+            return;
+        }
+
+        db.Bookings.Remove(booking);
+        await db.SaveChangesAsync();
+
+        _showDetails = false;
+        _selectedBooking = null;
+        await LoadWeekAsync();
+    }
+
+    private async Task ConfirmSelectedMeeting()
+    {
+        if (_selectedBooking is null || !CanConfirm(_selectedBooking))
+        {
+            _error = "Only admins can confirm room 1 meetings that are waiting for confirmation.";
+            return;
+        }
+
+        await using var db = await RoomDbFactory.CreateDbContextAsync();
+        var booking = await db.Bookings.FirstOrDefaultAsync(b => b.RoomBookingId == _selectedBooking.RoomBookingId);
+        if (booking is null)
+        {
+            _error = "Meeting not found.";
+            return;
+        }
+
+        if (booking.Room != 1 || booking.State != Booking.ConfirmationWait)
+        {
+            _error = "Meeting is not waiting for confirmation.";
+            return;
+        }
+
+        booking.State = Booking.Booked;
+        await db.SaveChangesAsync();
+
+        _showDetails = false;
+        _selectedBooking = null;
+        await LoadWeekAsync();
+    }
+
+    private bool CanEdit(Booking booking) => string.Equals(booking.Creator, _employeeId, StringComparison.OrdinalIgnoreCase);
+
+    private bool CanDelete(Booking booking) => CanEdit(booking) || _isAdmin;
+
+    private bool CanConfirm(Booking booking) => _isAdmin && booking.Room == 1 && booking.State == Booking.ConfirmationWait;
+
+    private void CloseDetails() => _showDetails = false;
+
+    private void CloseEditor() => _showEditor = false;
+
+    private async Task PreviousWeek()
+    {
+        _weekStart = _weekStart.AddDays(-7);
+        await LoadWeekAsync();
+    }
+
+    private async Task NextWeek()
+    {
+        _weekStart = _weekStart.AddDays(7);
+        await LoadWeekAsync();
+    }
+
+    private static string StateText(int state) => state switch
+    {
+        Booking.Booked => "Booked",
+        Booking.ConfirmationWait => "Waiting confirmation",
+        Booking.Unused => "Unused",
+        Booking.ConfirmationRejected => "Rejected",
+        Booking.Cancelled => "Cancelled",
+        _ => $"Unknown ({state})"
+    };
+
+    private sealed class MeetingEditorModel
+    {
+        public int? RoomBookingId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int Room { get; set; } = 2;
+        public string DateText { get; set; } = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+        public string StartTimeText { get; set; } = "08:00";
+        public string EndTimeText { get; set; } = "09:00";
+        public string? Note { get; set; }
+
+        public static MeetingEditorModel CreateNew(DateOnly weekStart)
+        {
+            var target = weekStart < DateOnly.FromDateTime(DateTime.Today) ? DateOnly.FromDateTime(DateTime.Today) : weekStart;
+            return new MeetingEditorModel
+            {
+                DateText = target.ToString("yyyy-MM-dd")
+            };
+        }
+
+        public static MeetingEditorModel FromBooking(Booking booking)
+        {
+            return new MeetingEditorModel
+            {
+                RoomBookingId = booking.RoomBookingId,
+                Title = booking.Title,
+                Room = booking.Room,
+                DateText = booking.Date.ToString("yyyy-MM-dd"),
+                StartTimeText = booking.StartTime.ToString("HH:mm"),
+                EndTimeText = booking.EndTime.ToString("HH:mm"),
+                Note = booking.Note
+            };
+        }
+    }
+}
