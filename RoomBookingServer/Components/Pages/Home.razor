@@ -15,21 +15,21 @@
             <h1>Weekly Room Booking</h1>
             <p>@_displayName (@_employeeId) @if (_isAdmin) { <span class="role-pill">Admin</span> }</p>
         </div>
-        <a href="/auth/logout" class="logout-link"><span class="material-symbols-outlined">logout</span>Logout</a>
+        <a href="/auth/logout" class="logout-link"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Logout</a>
     </header>
 
     <section class="toolbar">
         <button class="icon-button" @onclick="PreviousWeek">
-            <span class="material-symbols-outlined">chevron_left</span>
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
             <span>Previous week</span>
         </button>
-        <strong class="week-label"><span class="material-symbols-outlined">calendar_month</span>Week of @_weekStart.ToString("dd/MM/yyyy")</strong>
+        <strong class="week-label"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>Week of @_weekStart.ToString("dd/MM/yyyy")</strong>
         <button class="icon-button" @onclick="NextWeek">
-            <span class="material-symbols-outlined">chevron_right</span>
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
             <span>Next week</span>
         </button>
         <button class="primary icon-button" @onclick="OpenNewMeeting">
-            <span class="material-symbols-outlined">add_circle</span>
+            <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
             <span>Add meeting</span>
         </button>
     </section>
@@ -108,17 +108,17 @@
             <div class="modal-actions">
                 @if (CanEdit(_selectedBooking))
                 {
-                    <button class="icon-button" @onclick="OpenEditMeeting"><span class="material-symbols-outlined">edit</span><span>Edit</span></button>
+                    <button class="icon-button" @onclick="OpenEditMeeting"><span class="material-symbols-outlined" aria-hidden="true">edit</span><span>Edit</span></button>
                 }
                 @if (CanDelete(_selectedBooking))
                 {
-                    <button class="danger icon-button" @onclick="DeleteSelectedMeeting"><span class="material-symbols-outlined">delete</span><span>Delete</span></button>
+                    <button class="danger icon-button" @onclick="DeleteSelectedMeeting"><span class="material-symbols-outlined" aria-hidden="true">delete</span><span>Delete</span></button>
                 }
                 @if (CanConfirm(_selectedBooking))
                 {
-                    <button class="primary icon-button" @onclick="ConfirmSelectedMeeting"><span class="material-symbols-outlined">check_circle</span><span>Confirm</span></button>
+                    <button class="primary icon-button" @onclick="ConfirmSelectedMeeting"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>Confirm</span></button>
                 }
-                <button class="icon-button" @onclick="CloseDetails"><span class="material-symbols-outlined">close</span><span>Close</span></button>
+                <button class="icon-button" @onclick="CloseDetails"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Close</span></button>
             </div>
         </div>
     </div>
@@ -153,8 +153,8 @@
             <textarea rows="3" @bind="_editor.Note"></textarea>
 
             <div class="modal-actions">
-                <button class="primary icon-button" @onclick="SaveMeetingAsync"><span class="material-symbols-outlined">save</span><span>Save</span></button>
-                <button class="icon-button" @onclick="CloseEditor"><span class="material-symbols-outlined">close</span><span>Cancel</span></button>
+                <button class="primary icon-button" @onclick="SaveMeetingAsync"><span class="material-symbols-outlined" aria-hidden="true">save</span><span>Save</span></button>
+                <button class="icon-button" @onclick="CloseEditor"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Cancel</span></button>
             </div>
         </div>
     </div>
