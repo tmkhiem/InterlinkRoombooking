@@ -122,9 +122,9 @@
 
             <label>Room</label>
             <select @bind="_editor.Room">
-                <option value="1">R1 (confirmation required)</option>
-                <option value="2">R2</option>
-                <option value="3">R3</option>
+                <option value="@Room1">@RoomLabels[Room1]</option>
+                <option value="@Room2">@RoomLabels[Room2]</option>
+                <option value="@Room3">@RoomLabels[Room3]</option>
             </select>
 
             <label>Start</label>
@@ -145,7 +145,16 @@
 }
 
 @code {
-    private static readonly int[] Rooms = [1, 2, 3];
+    private const int Room1 = 1;
+    private const int Room2 = 2;
+    private const int Room3 = 3;
+    private static readonly int[] Rooms = [Room1, Room2, Room3];
+    private static readonly IReadOnlyDictionary<int, string> RoomLabels = new Dictionary<int, string>
+    {
+        [Room1] = "R1 (confirmation required)",
+        [Room2] = "R2",
+        [Room3] = "R3"
+    };
     private static readonly int[] Hours = Enumerable.Range(7, 14).ToArray();
 
     private DateOnly _weekStart = StartOfWeek(DateOnly.FromDateTime(DateTime.Today));
@@ -275,7 +284,7 @@
             return;
         }
 
-        if (_editor.Room is < 1 or > 3)
+        if (_editor.Room is < Room1 or > Room3)
         {
             _error = "Room is invalid.";
             return;
@@ -328,7 +337,7 @@
         booking.StartTime = startTime;
         booking.EndTime = endTime;
         booking.Note = string.IsNullOrWhiteSpace(_editor.Note) ? null : _editor.Note.Trim();
-        booking.State = booking.Room == 1 ? Booking.ConfirmationWait : Booking.Booked;
+        booking.State = booking.Room == Room1 ? Booking.ConfirmationWait : Booking.Booked;
 
         await db.SaveChangesAsync();
 
@@ -376,7 +385,7 @@
             return;
         }
 
-        if (booking.Room != 1 || booking.State != Booking.ConfirmationWait)
+        if (booking.Room != Room1 || booking.State != Booking.ConfirmationWait)
         {
             _error = "Meeting is not waiting for confirmation.";
             return;
@@ -394,7 +403,7 @@
 
     private bool CanDelete(Booking booking) => CanEdit(booking) || _isAdmin;
 
-    private bool CanConfirm(Booking booking) => _isAdmin && booking.Room == 1 && booking.State == Booking.ConfirmationWait;
+    private bool CanConfirm(Booking booking) => _isAdmin && booking.Room == Room1 && booking.State == Booking.ConfirmationWait;
 
     private void CloseDetails() => _showDetails = false;
 
@@ -427,14 +436,15 @@
         public int? RoomBookingId { get; set; }
         public string Title { get; set; } = string.Empty;
         public int Room { get; set; } = 2;
-        public string DateText { get; set; } = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+        public string DateText { get; set; } = string.Empty;
         public string StartTimeText { get; set; } = "08:00";
         public string EndTimeText { get; set; } = "09:00";
         public string? Note { get; set; }
 
         public static MeetingEditorModel CreateNew(DateOnly weekStart)
         {
-            var target = weekStart < DateOnly.FromDateTime(DateTime.Today) ? DateOnly.FromDateTime(DateTime.Today) : weekStart;
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var target = weekStart < today ? today : weekStart;
             return new MeetingEditorModel
             {
                 DateText = target.ToString("yyyy-MM-dd")

@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -64,13 +66,13 @@ namespace RoomBookingServer
                 await using var attendanceDb = await attendanceFactory.CreateDbContextAsync();
                 var employee = await attendanceDb.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
 
-                if (employee is null || employee.Password != password)
+                if (employee is null || !PasswordMatches(employee.Password, password))
                 {
                     return Results.Redirect("/login?error=invalid");
                 }
 
                 await using var roomDb = await roomFactory.CreateDbContextAsync();
-                var isAdmin = await roomDb.Admins.AnyAsync(a => a.Email == employee.Id || (!string.IsNullOrWhiteSpace(employee.Email) && a.Email == employee.Email));
+                var isAdmin = await IsEmployeeAdminAsync(roomDb, employee);
 
                 var claims = new List<Claim>
                 {
@@ -106,6 +108,20 @@ namespace RoomBookingServer
                 .AddInteractiveServerRenderMode();
 
             app.Run();
+        }
+
+        private static bool PasswordMatches(string storedPassword, string incomingPassword)
+        {
+            var storedBytes = Encoding.UTF8.GetBytes(storedPassword);
+            var incomingBytes = Encoding.UTF8.GetBytes(incomingPassword);
+            return CryptographicOperations.FixedTimeEquals(storedBytes, incomingBytes);
+        }
+
+        private static Task<bool> IsEmployeeAdminAsync(RoombookingContext db, Employee employee)
+        {
+            return db.Admins.AnyAsync(a =>
+                a.Email == employee.Id ||
+                (!string.IsNullOrWhiteSpace(employee.Email) && a.Email == employee.Email));
         }
     }
 }
