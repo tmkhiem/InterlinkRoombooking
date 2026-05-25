@@ -495,15 +495,15 @@
     private static string MeetingTense(Booking booking)
     {
         var now = TimeProvider.System.GetLocalNow().DateTime;
-        var meetingStart = booking.Date.ToDateTime(booking.StartTime);
-        var meetingEnd = booking.Date.ToDateTime(booking.EndTime);
+        var today = DateOnly.FromDateTime(now);
+        var currentTime = TimeOnly.FromDateTime(now);
 
-        if (now < meetingStart)
+        if (today < booking.Date || (today == booking.Date && currentTime < booking.StartTime))
         {
             return "will take place";
         }
 
-        if (now <= meetingEnd)
+        if (today == booking.Date && currentTime <= booking.EndTime)
         {
             return "is taking place";
         }
