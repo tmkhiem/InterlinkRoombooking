@@ -119,9 +119,7 @@ namespace RoomBookingServer
 
         private static Task<bool> IsEmployeeAdminAsync(RoombookingContext db, Employee employee)
         {
-            return db.Admins.AnyAsync(a =>
-                a.Email == employee.Id ||
-                (!string.IsNullOrWhiteSpace(employee.Email) && a.Email == employee.Email));
+            return db.Admins.AnyAsync(a => a.EmployeeId == employee.Id);
         }
     }
 }
