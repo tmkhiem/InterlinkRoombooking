@@ -1,0 +1,2 @@
+﻿Scaffold-DbContext Name=Attendance Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models\Db\Attendance -Tables Employees -Force
+Scaffold-DbContext Name=Roombooking Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models\Db\Roombooking -Force
