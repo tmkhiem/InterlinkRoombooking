@@ -494,7 +494,7 @@
 
     private static string MeetingTense(Booking booking)
     {
-        var now = DateTime.Now;
+        var now = TimeProvider.System.GetLocalNow().DateTime;
         var meetingStart = booking.Date.ToDateTime(booking.StartTime);
         var meetingEnd = booking.Date.ToDateTime(booking.EndTime);
 
