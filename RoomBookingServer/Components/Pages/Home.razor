@@ -113,16 +113,44 @@
 @if (_showDetails && _selectedBooking is not null)
 {
     <div class="modal-backdrop">
-        <div class="modal-card">
-            <h2>@_selectedBooking.Title</h2>
-            <p><strong>Date:</strong> @_selectedBooking.Date.ToString("dd/MM/yyyy")</p>
-            <p><strong>Time:</strong> @_selectedBooking.StartTime.ToString("HH:mm") – @_selectedBooking.EndTime.ToString("HH:mm")</p>
-            <p><strong>Room:</strong> R@_selectedBooking.Room</p>
-            <p><strong>Creator:</strong> @_selectedBooking.Creator (@_selectedBooking.Name)</p>
-            <p><strong>Status:</strong> @StateText(_selectedBooking.State)</p>
+        <div class="modal-card booking-details-card">
+            <div style="height: 2rem;"></div>
+            <h2 class="details-title">
+                Meeting
+                <span class="details-accent-red">@_selectedBooking.Title</span>
+            </h2>
+            <p class="details-paragraph">
+                This meeting @MeetingTense(_selectedBooking) in room
+                <span class="details-accent-blue">R@_selectedBooking.Room</span>
+                on
+                <span class="details-accent-red">@_selectedBooking.Date.ToString("dddd, dd/MM/yyyy", CultureInfo.InvariantCulture)</span>
+                from
+                <span class="details-accent-blue">@_selectedBooking.StartTime.ToString("HH:mm")</span>
+                to
+                <span class="details-accent-blue">@_selectedBooking.EndTime.ToString("HH:mm")</span>.
+            </p>
+            <hr class="details-divider" />
+            <p class="details-paragraph">
+                This booking was created by
+                <span class="details-accent-red">@_selectedBooking.Creator</span>
+                (<span class="details-accent-red">@_selectedBooking.Name</span>).
+            </p>
+            <p class="details-paragraph">
+                Status:
+                <span class="details-status-text">@StateText(_selectedBooking.State)</span>
+            </p>
+            @if (_selectedBooking.State == Booking.ConfirmationWait)
+            {
+                <p class="details-pending">This booking is waiting for confirmation.</p>
+            }
             @if (!string.IsNullOrWhiteSpace(_selectedBooking.Note))
             {
-                <p><strong>Note:</strong> @_selectedBooking.Note</p>
+                <p class="details-note-title"><strong>Note:</strong></p>
+                <blockquote class="details-note-content">@_selectedBooking.Note</blockquote>
+            }
+            else
+            {
+                <p class="details-note-title"><strong>No note.</strong></p>
             }
 
             <div class="modal-actions">
@@ -462,6 +490,25 @@
     {
         _weekStart = _weekStart.AddDays(7);
         await LoadWeekAsync();
+    }
+
+    private static string MeetingTense(Booking booking)
+    {
+        var now = DateTime.Now;
+        var meetingStart = booking.Date.ToDateTime(booking.StartTime);
+        var meetingEnd = booking.Date.ToDateTime(booking.EndTime);
+
+        if (now < meetingStart)
+        {
+            return "will take place";
+        }
+
+        if (now <= meetingEnd)
+        {
+            return "is taking place";
+        }
+
+        return "took place";
     }
 
     private async Task GoToCurrentWeek()

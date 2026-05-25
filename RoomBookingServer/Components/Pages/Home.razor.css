@@ -333,6 +333,66 @@ button.danger {
     color: #1d1b20;
 }
 
+.booking-details-card {
+    gap: .45rem;
+}
+
+.details-title {
+    margin: 0;
+    font-size: 1.45rem;
+    line-height: 1.35;
+}
+
+.details-paragraph {
+    margin: 0;
+    color: #28242f;
+    font-size: .96rem;
+    line-height: 1.5;
+}
+
+.details-accent-red {
+    color: #b3261e;
+    font-weight: 700;
+    margin-left: .22rem;
+}
+
+.details-accent-blue {
+    color: #005c9a;
+    font-weight: 700;
+    margin-left: .22rem;
+}
+
+.details-divider {
+    width: 100%;
+    border: none;
+    border-top: 1px solid #ddd6ec;
+    margin: .3rem 0;
+}
+
+.details-status-text {
+    margin-left: .3rem;
+    font-weight: 600;
+}
+
+.details-pending {
+    margin: 0;
+    color: #005c9a;
+    font-weight: 600;
+}
+
+.details-note-title {
+    margin: 0;
+}
+
+.details-note-content {
+    margin: 0;
+    padding: .5rem .7rem;
+    border-left: 3px solid #bcb2d0;
+    background: #f8f4ff;
+    color: #322f35;
+    border-radius: .4rem;
+}
+
 .modal-card label {
     font-weight: 600;
     color: #322f35;
@@ -368,6 +428,4 @@ button.danger {
     .user-panel {
         margin-left: auto;
     }
-    margin-top: .5rem;
-    flex-wrap: wrap;
 }
