@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import './WeekHorizontal.css'; // Add a CSS file for styling
+import './WeekHorizontal.css';
 import { Schedule, WeekSchedule } from '../Schedule';
 import { Tooltip } from "antd";
 import ModalBookingDetails from './ModalBookingDetails';
@@ -15,31 +15,27 @@ const WeekHorizontal: React.FC<WeekHorizontalProps> = ({ weekSchedule, onDeleteS
     const [columnOffsets, setColumnOffsets] = useState<number[]>([]);
     const tableRef = useRef<HTMLTableElement>(null);
 
-    // Function to measure the x-offset of each hour column
     const measureColumnOffsets = () => {
         if (tableRef.current) {
             const hourCells = Array.from(tableRef.current.querySelectorAll('.hour-header')) as HTMLElement[];
             const offsets = hourCells.map((cell) => cell.offsetLeft);
             setColumnOffsets(offsets);
-            // console.log('Column offsets:', offsets);
         }
     };
 
-    // Measure the column offsets on mount and on window resize
     useEffect(() => {
-        measureColumnOffsets(); // Initial measurement
+        measureColumnOffsets();
 
         const handleResize = () => {
-            measureColumnOffsets(); // Recalculate on resize
+            measureColumnOffsets();
         };
 
-        window.addEventListener('resize', handleResize); // Add resize listener
+        window.addEventListener('resize', handleResize);
         return () => {
-            window.removeEventListener('resize', handleResize); // Cleanup listener on unmount
+            window.removeEventListener('resize', handleResize);
         };
     }, []);
 
-    // Generate 7 consecutive days
     const days = Array.from({ length: 7 }, (_, i) => {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);
@@ -61,11 +57,39 @@ const WeekHorizontal: React.FC<WeekHorizontalProps> = ({ weekSchedule, onDeleteS
         };
     });
 
-    // Generate columns for hours from 7 AM to 7 PM
     const hours = Array.from({ length: 14 }, (_, i) => 7 + i);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+    const firstOffset = columnOffsets[0] ?? 0;
+    const normalizedOffsets = columnOffsets.map((offset) => offset - firstOffset);
+    const defaultHourWidth = normalizedOffsets.length > 1 ? normalizedOffsets[1] - normalizedOffsets[0] : 0;
+    const getHourWidth = (hourIndex: number): number => {
+        if (normalizedOffsets.length <= 1) {
+            return defaultHourWidth;
+        }
+
+        if (hourIndex < normalizedOffsets.length - 1) {
+            return normalizedOffsets[hourIndex + 1] - normalizedOffsets[hourIndex];
+        }
+
+        return normalizedOffsets[hourIndex] - normalizedOffsets[hourIndex - 1];
+    };
+    const getOffsetAtMinutes = (minutesSinceSeven: number): number => {
+        if (normalizedOffsets.length === 0) {
+            return 0;
+        }
+
+        const clampedMinutes = Math.max(0, Math.min(minutesSinceSeven, hours.length * 60));
+        if (clampedMinutes === hours.length * 60) {
+            const lastIndex = hours.length - 1;
+            return normalizedOffsets[lastIndex] + getHourWidth(lastIndex);
+        }
+
+        const hourIndex = Math.min(Math.floor(clampedMinutes / 60), hours.length - 1);
+        const minuteInHour = clampedMinutes % 60;
+        return normalizedOffsets[hourIndex] + (minuteInHour / 60) * getHourWidth(hourIndex);
+    };
 
     return (
         <div className="week-horizontal-table">
@@ -83,15 +107,7 @@ const WeekHorizontal: React.FC<WeekHorizontalProps> = ({ weekSchedule, onDeleteS
                         <th></th>
                         {hours.map((hour) => (
                             <th key={hour} className="hour-header">
-                                <div>&nbsp;</div>
-                                <div style={{
-                                    zIndex: 1,
-                                    marginLeft: '-1.5rem',
-                                    marginTop: '-1.4rem',
-                                    position: 'fixed'                                    
-                                }}>
-                                    {`${hour}:00`}
-                                </div>
+                                <span className="hour-label">{`${hour}:00`}</span>
                             </th>
                         ))}
                     </tr>
@@ -100,19 +116,9 @@ const WeekHorizontal: React.FC<WeekHorizontalProps> = ({ weekSchedule, onDeleteS
                     {
                         days.map((day) => {
                             const schedulesForDay = weekSchedule.schedules.filter(
-                                (schedule) => {
-                                    // console.log('schedule.Date:', schedule.Date, 'day.date:', day.date, 'type: ', typeof schedule.Date, typeof day.date);
-                                    schedule.Date.toDateString() === day.date.toDateString();
-                                    if (schedule.Date.toDateString() === day.date.toDateString()) {
-                                        //console.log(schedule.Date.toDateString(), day.date.toDateString(), schedule.Date.toDateString() === day.date.toDateString())
-                                        return true;
-                                    }
-                                }
+                                (schedule) => schedule.Date.toDateString() === day.date.toDateString()
                             );
 
-                            // console.log('schedulesForDay: ', day.date, schedulesForDay, 'schedules: ', weekSchedule.schedules);
-
-                            // Check if the current day is today's date in DD/MM/YYYY format                            
                             const isToday = new Date().toDateString() === day.date.toDateString();
 
                             return (
@@ -127,22 +133,12 @@ const WeekHorizontal: React.FC<WeekHorizontalProps> = ({ weekSchedule, onDeleteS
                                                         const [startHour, startMinute] = schedule.StartTime.split(':').map(Number);
                                                         const [endHour, endMinute] = schedule.EndTime.split(':').map(Number);
 
-                                                        // Calculate the total minutes since 7 AM for start and end times
                                                         const startTotalMinutes = (startHour - 7) * 60 + startMinute;
                                                         const endTotalMinutes = (endHour - 7) * 60 + endMinute;
-                                                        const totalMinutes = endTotalMinutes - startTotalMinutes;
+                                                        const startOffset = getOffsetAtMinutes(startTotalMinutes);
+                                                        const endOffset = getOffsetAtMinutes(endTotalMinutes);
+                                                        const spanWidth = Math.max(endOffset - startOffset, 0);
 
-                                                        // Find the x-offset of the nearest column for start and end times
-                                                        const startColumnIndex = Math.floor(startTotalMinutes / 60.0) - 1;
-                                                        const endColumnIndex = Math.ceil(endTotalMinutes / 60.0) - 1;
-                                                        const startOffset =
-                                                            columnOffsets[startColumnIndex] +
-                                                            ((startTotalMinutes % 60) / 60.0) *
-                                                            (columnOffsets[startColumnIndex + 1] - columnOffsets[startColumnIndex]);
-
-                                                        const spanWidth = totalMinutes * (columnOffsets[endColumnIndex] - columnOffsets[endColumnIndex - 1]) / 60.0;
-
-                                                        //console.log(`${schedule.Title}: duration=${totalMinutes} startOffset=${startOffset} spanWidth=${spanWidth}`);
                                                         return (
                                                             <Tooltip title={`${schedule.Title} (phòng R${schedule.Room}, do ${schedule.Creator} đặt) - ${schedule.StartTime} - ${schedule.EndTime}`} key={schedule.Id}>
                                                                 <div
@@ -178,4 +174,3 @@ const WeekHorizontal: React.FC<WeekHorizontalProps> = ({ weekSchedule, onDeleteS
 };
 
 export default WeekHorizontal;
-
