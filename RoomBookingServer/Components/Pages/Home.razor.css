@@ -337,6 +337,10 @@ button.danger {
     gap: .45rem;
 }
 
+.details-spacer {
+    height: 2rem;
+}
+
 .details-title {
     margin: 0;
     font-size: 1.45rem;
