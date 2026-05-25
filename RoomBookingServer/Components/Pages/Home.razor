@@ -10,29 +10,49 @@
 <PageTitle>Room Booking</PageTitle>
 
 <div class="booking-page">
-    <header class="booking-header">
-        <div>
-            <h1>Weekly Room Booking</h1>
-            <p>@_displayName (@_employeeId) @if (_isAdmin) { <span class="role-pill">Admin</span> }</p>
+    <header class="top-bar">
+        <div class="brand-panel">
+            <img class="brand-logo" src="/header.svg" alt="Interlink Room Booking" />
         </div>
-        <a href="/auth/logout" class="logout-link"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Logout</a>
+        <div class="top-bar-main">
+            <section class="toolbar">
+                <button class="icon-button" @onclick="PreviousWeek">
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+                    <span>Previous week</span>
+                </button>
+                <button class="icon-button" @onclick="GoToCurrentWeek">
+                    <span class="material-symbols-outlined" aria-hidden="true">today</span>
+                    <span>Current week</span>
+                </button>
+                <button class="icon-button" @onclick="NextWeek">
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                    <span>Next week</span>
+                </button>
+                <strong class="week-label"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>Week of @_weekStart.ToString("dd/MM/yyyy")</strong>
+                <button class="primary icon-button" @onclick="OpenNewMeeting">
+                    <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                    <span>Add meeting</span>
+                </button>
+            </section>
+        </div>
+        <div class="user-panel">
+            <div class="employee-summary">
+                <span class="employee-name">@_displayName</span>
+                @if (_isAdmin)
+                {
+                    <span class="role-pill">Admin</span>
+                }
+            </div>
+            <div class="user-menu">
+                <button type="button" class="user-menu-trigger" aria-label="User menu">
+                    <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+                </button>
+                <div class="user-menu-panel">
+                    <a href="/auth/logout" class="logout-link"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Logout</a>
+                </div>
+            </div>
+        </div>
     </header>
-
-    <section class="toolbar">
-        <button class="icon-button" @onclick="PreviousWeek">
-            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
-            <span>Previous week</span>
-        </button>
-        <strong class="week-label"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>Week of @_weekStart.ToString("dd/MM/yyyy")</strong>
-        <button class="icon-button" @onclick="NextWeek">
-            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-            <span>Next week</span>
-        </button>
-        <button class="primary icon-button" @onclick="OpenNewMeeting">
-            <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
-            <span>Add meeting</span>
-        </button>
-    </section>
 
     @if (!string.IsNullOrWhiteSpace(_error))
     {
@@ -42,10 +62,10 @@
     <table class="calendar-table">
         <thead>
             <tr>
-                <th>Day / Room</th>
+                <th class="timeline-spacer" aria-hidden="true"></th>
                 @foreach (var hour in Hours)
                 {
-                    <th>@($"{hour:00}:00")</th>
+                    <th class="hour-header"><span class="hour-header-label">@($"{hour:00}:00")</span></th>
                 }
             </tr>
         </thead>
@@ -441,6 +461,12 @@
     private async Task NextWeek()
     {
         _weekStart = _weekStart.AddDays(7);
+        await LoadWeekAsync();
+    }
+
+    private async Task GoToCurrentWeek()
+    {
+        _weekStart = StartOfWeek(DateOnly.FromDateTime(DateTime.Today));
         await LoadWeekAsync();
     }
 

@@ -1,52 +1,47 @@
 .booking-page {
     padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
 }
 
-.booking-header {
+.top-bar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.booking-header h1 {
-    margin: 0;
-    font-size: 1.7rem;
-    letter-spacing: .01em;
-}
-
-.booking-header p {
-    margin: .25rem 0 0;
-    color: #49454f;
-}
-
-.role-pill {
-    display: inline-block;
-    margin-left: .5rem;
-    padding: .2rem .55rem;
+    min-height: 64px;
+    padding: .75rem 1rem;
+    background: #fff;
+    border: 1px solid #e2d9f1;
     border-radius: 1rem;
-    background: #b3261e;
-    color: #fff;
-    font-size: .78rem;
-    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
 }
 
-.logout-link {
-    display: inline-flex;
-    align-items: center;
-    gap: .25rem;
-    color: #6750a4;
-    font-weight: 600;
-    text-decoration: none;
+.brand-panel {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+.brand-logo {
+    display: block;
+    max-height: 40px;
+    max-width: min(240px, 100%);
+    width: auto;
+    height: auto;
+}
+
+.top-bar-main {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .toolbar {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
     gap: .6rem;
-    margin-bottom: .9rem;
+    flex-wrap: wrap;
 }
 
 .week-label {
@@ -57,6 +52,89 @@
     background: #ece6f0;
     border-radius: 1rem;
     padding: .35rem .7rem;
+}
+
+.user-panel {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex: 0 0 auto;
+}
+
+.employee-summary {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    color: #322f35;
+    white-space: nowrap;
+}
+
+.employee-name {
+    font-weight: 600;
+}
+
+.role-pill {
+    display: inline-block;
+    padding: .2rem .55rem;
+    border-radius: 1rem;
+    background: #b3261e;
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 600;
+}
+
+.user-menu {
+    position: relative;
+}
+
+.user-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    padding: 0;
+    border-radius: 999px;
+}
+
+.user-menu-trigger .material-symbols-outlined {
+    font-size: 1.55rem;
+}
+
+.user-menu-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + .35rem);
+    right: 0;
+    min-width: 9rem;
+    padding: .35rem;
+    background: #fff;
+    border: 1px solid #d8d0e6;
+    border-radius: .75rem;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .12);
+    z-index: 10;
+}
+
+.user-menu:hover .user-menu-panel,
+.user-menu:focus-within .user-menu-panel {
+    display: block;
+}
+
+.logout-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    width: 100%;
+    padding: .45rem .55rem;
+    border-radius: .5rem;
+    color: #6750a4;
+    font-weight: 600;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.logout-link:hover {
+    background: #f4effb;
 }
 
 button {
@@ -94,7 +172,7 @@ button.danger {
 
 .error-banner {
     color: #b3261e;
-    margin: .6rem 0;
+    margin: 0;
 }
 
 .calendar-table {
@@ -117,7 +195,23 @@ button.danger {
     background: #ece6f0;
     color: #4a4458;
     font-size: .84rem;
-    padding: .45rem .3rem;
+    padding: 0;
+    position: relative;
+    overflow: visible;
+    height: 2.6rem;
+}
+
+.timeline-spacer {
+    width: 145px;
+}
+
+.hour-header-label {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    font-weight: 600;
 }
 
 .day-cell {
@@ -258,6 +352,22 @@ button.danger {
     display: flex;
     justify-content: flex-end;
     gap: .5rem;
+}
+
+@media (max-width: 1280px) {
+    .top-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .top-bar-main {
+        order: 3;
+        width: 100%;
+    }
+
+    .user-panel {
+        margin-left: auto;
+    }
     margin-top: .5rem;
     flex-wrap: wrap;
 }
