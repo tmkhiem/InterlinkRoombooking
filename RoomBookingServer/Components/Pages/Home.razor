@@ -120,7 +120,7 @@
                 <span class="details-accent-red">@_selectedBooking.Title</span>
             </h2>
             <p class="details-paragraph">
-                This meeting @MeetingTense(_selectedBooking) in room
+                This meeting @DetermineMeetingTimePhrase(_selectedBooking) in room
                 <span class="details-accent-blue">R@_selectedBooking.Room</span>
                 on
                 <span class="details-accent-red">@_selectedBooking.Date.ToString("dddd, dd/MM/yyyy", CultureInfo.InvariantCulture)</span>
@@ -492,7 +492,7 @@
         await LoadWeekAsync();
     }
 
-    private static string MeetingTense(Booking booking)
+    private static string DetermineMeetingTimePhrase(Booking booking)
     {
         var now = TimeProvider.System.GetLocalNow().DateTime;
         var today = DateOnly.FromDateTime(now);
