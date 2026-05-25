@@ -15,14 +15,23 @@
             <h1>Weekly Room Booking</h1>
             <p>@_displayName (@_employeeId) @if (_isAdmin) { <span class="role-pill">Admin</span> }</p>
         </div>
-        <a href="/auth/logout" class="logout-link">Logout</a>
+        <a href="/auth/logout" class="logout-link"><span class="material-symbols-outlined">logout</span>Logout</a>
     </header>
 
     <section class="toolbar">
-        <button @onclick="PreviousWeek">Previous week</button>
-        <strong>Week of @_weekStart.ToString("dd/MM/yyyy")</strong>
-        <button @onclick="NextWeek">Next week</button>
-        <button class="primary" @onclick="OpenNewMeeting">Add meeting</button>
+        <button class="icon-button" @onclick="PreviousWeek">
+            <span class="material-symbols-outlined">chevron_left</span>
+            <span>Previous week</span>
+        </button>
+        <strong class="week-label"><span class="material-symbols-outlined">calendar_month</span>Week of @_weekStart.ToString("dd/MM/yyyy")</strong>
+        <button class="icon-button" @onclick="NextWeek">
+            <span class="material-symbols-outlined">chevron_right</span>
+            <span>Next week</span>
+        </button>
+        <button class="primary icon-button" @onclick="OpenNewMeeting">
+            <span class="material-symbols-outlined">add_circle</span>
+            <span>Add meeting</span>
+        </button>
     </section>
 
     @if (!string.IsNullOrWhiteSpace(_error))
@@ -56,17 +65,24 @@
                             </td>
                         }
 
-                        @foreach (var hour in Hours)
-                        {
-                            var booking = GetBookingForCell(date, room, hour);
-                            <td class="@(booking is null ? "slot-cell" : $"slot-cell occupied room-{room} state-{booking.State}")"
-                                @onclick="() => OnCellClicked(date, room, hour)">
-                                @if (booking is not null)
+                        <td class="schedule-lane" colspan="@Hours.Length">
+                            <div class="hour-grid">
+                                <span class="lane-label">R@room</span>
+                                @for (var hourIndex = 1; hourIndex < Hours.Length; hourIndex++)
                                 {
-                                    <span>@booking.Title</span>
+                                    <span class="hour-divider" style="@($"left: {(hourIndex * 100d / Hours.Length):F4}%")"></span>
                                 }
-                            </td>
-                        }
+                                @foreach (var booking in GetBookingsForLane(date, room))
+                                {
+                                    <button type="button"
+                                            class="meeting-chip room-@booking.Room state-@booking.State"
+                                            style="@GetBookingStyle(booking)"
+                                            @onclick="() => OpenBookingDetails(booking)">
+                                        @booking.Title
+                                    </button>
+                                }
+                            </div>
+                        </td>
                     </tr>
                 }
             }
@@ -92,17 +108,17 @@
             <div class="modal-actions">
                 @if (CanEdit(_selectedBooking))
                 {
-                    <button @onclick="OpenEditMeeting">Edit</button>
+                    <button class="icon-button" @onclick="OpenEditMeeting"><span class="material-symbols-outlined">edit</span><span>Edit</span></button>
                 }
                 @if (CanDelete(_selectedBooking))
                 {
-                    <button class="danger" @onclick="DeleteSelectedMeeting">Delete</button>
+                    <button class="danger icon-button" @onclick="DeleteSelectedMeeting"><span class="material-symbols-outlined">delete</span><span>Delete</span></button>
                 }
                 @if (CanConfirm(_selectedBooking))
                 {
-                    <button class="primary" @onclick="ConfirmSelectedMeeting">Confirm</button>
+                    <button class="primary icon-button" @onclick="ConfirmSelectedMeeting"><span class="material-symbols-outlined">check_circle</span><span>Confirm</span></button>
                 }
-                <button @onclick="CloseDetails">Close</button>
+                <button class="icon-button" @onclick="CloseDetails"><span class="material-symbols-outlined">close</span><span>Close</span></button>
             </div>
         </div>
     </div>
@@ -137,8 +153,8 @@
             <textarea rows="3" @bind="_editor.Note"></textarea>
 
             <div class="modal-actions">
-                <button class="primary" @onclick="SaveMeetingAsync">Save</button>
-                <button @onclick="CloseEditor">Cancel</button>
+                <button class="primary icon-button" @onclick="SaveMeetingAsync"><span class="material-symbols-outlined">save</span><span>Save</span></button>
+                <button class="icon-button" @onclick="CloseEditor"><span class="material-symbols-outlined">close</span><span>Cancel</span></button>
             </div>
         </div>
     </div>
@@ -149,13 +165,15 @@
     private const int Room2 = 2;
     private const int Room3 = 3;
     private static readonly int[] Rooms = [Room1, Room2, Room3];
+    private const int CalendarStartHour = 7;
+    private const int CalendarHourCount = 14;
     private static readonly IReadOnlyDictionary<int, string> RoomLabels = new Dictionary<int, string>
     {
         [Room1] = "R1 (confirmation required)",
         [Room2] = "R2",
         [Room3] = "R3"
     };
-    private static readonly int[] Hours = Enumerable.Range(7, 14).ToArray();
+    private static readonly int[] Hours = Enumerable.Range(CalendarStartHour, CalendarHourCount).ToArray();
 
     private DateOnly _weekStart = StartOfWeek(DateOnly.FromDateTime(DateTime.Today));
     private List<Booking> _bookings = [];
@@ -204,16 +222,11 @@
         return date.AddDays(offset);
     }
 
-    private Booking? GetBookingForCell(DateOnly date, int room, int hour)
+    private IEnumerable<Booking> GetBookingsForLane(DateOnly date, int room)
     {
-        var slotStart = new TimeOnly(hour, 0);
-        var slotEnd = new TimeOnly(hour + 1, 0);
-
-        return _bookings.FirstOrDefault(b =>
-            b.Date == date &&
-            b.Room == room &&
-            b.StartTime < slotEnd &&
-            slotStart < b.EndTime);
+        return _bookings
+            .Where(b => b.Date == date && b.Room == room)
+            .OrderBy(b => b.StartTime);
     }
 
     private string GetLaneRowClass(int laneIndex) => laneIndex switch
@@ -223,17 +236,27 @@
         _ => "day-row day-row-bottom"
     };
 
-    private void OnCellClicked(DateOnly date, int room, int hour)
+    private void OpenBookingDetails(Booking booking)
     {
         _error = null;
-        var booking = GetBookingForCell(date, room, hour);
-        if (booking is null)
-        {
-            return;
-        }
-
         _selectedBooking = booking;
         _showDetails = true;
+    }
+
+    private static string GetBookingStyle(Booking booking)
+    {
+        var totalMinutes = CalendarHourCount * 60d;
+        var startMinutes = Math.Clamp(((booking.StartTime.Hour - CalendarStartHour) * 60d) + booking.StartTime.Minute, 0d, totalMinutes);
+        var endMinutes = Math.Clamp(((booking.EndTime.Hour - CalendarStartHour) * 60d) + booking.EndTime.Minute, 0d, totalMinutes);
+
+        if (endMinutes <= startMinutes)
+        {
+            endMinutes = Math.Min(startMinutes + 1d, totalMinutes);
+        }
+
+        var leftPercent = startMinutes * 100d / totalMinutes;
+        var widthPercent = (endMinutes - startMinutes) * 100d / totalMinutes;
+        return $"left: {leftPercent:F4}%; width: {widthPercent:F4}%;";
     }
 
     private void OpenNewMeeting()
