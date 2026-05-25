@@ -28,9 +28,11 @@ public partial class RoombookingContext : DbContext
     {
         modelBuilder.Entity<Admin>(entity =>
         {
-            entity.HasKey(e => e.Email);
+            entity.HasKey(e => e.EmployeeId);
 
-            entity.Property(e => e.Email).HasMaxLength(64);
+            entity.Property(e => e.EmployeeId)
+                .HasMaxLength(10)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<Booking>(entity =>

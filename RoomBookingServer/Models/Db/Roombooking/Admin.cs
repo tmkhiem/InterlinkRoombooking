@@ -5,5 +5,5 @@ namespace RoomBookingServer.Models.Db.Roombooking;
 
 public partial class Admin
 {
-    public string Email { get; set; } = null!;
+    public string EmployeeId { get; set; } = null!;
 }
