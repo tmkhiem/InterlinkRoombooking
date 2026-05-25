@@ -2,9 +2,7 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #fff;
+  /* Ensures consistent column widths for hour columns */
 }
 
 .custom-table th,
@@ -14,49 +12,49 @@
 }
 
 .custom-table td {
-  border: 1px solid #e3dff1;
+  border: 1px solid #d9d9d9;
 }
 
 .day-cell {
   white-space: normal;
+  /* Allow line wrapping */
   word-wrap: break-word;
+  /* Break long words if necessary */
   font-weight: bold;
-  background-color: #f6f1ff;
+  background-color: #f5f5f5;
   text-align: center;
+  /* Align text to the left for better readability */
   min-width: calc(var(--hour-column-width, 100px) * 2);
+  /* Minimum width is twice the hour column width */
   max-width: 300px;
+  /* Optional: Set a maximum width to prevent excessive stretching */
   vertical-align: middle;
-  color: #322942;
 }
 
 .today-row {
-  background-color: #fbf7ff;
+  background-color: white;
+  /* Set the background color to white for today's row */
 }
 
 .hour-header {
   white-space: nowrap;
+  /* Prevents text wrapping */
   overflow: hidden;
+  /* Hides overflow if text is too long */
   text-overflow: ellipsis;
-  text-align: center;
-  background-color: #ede6ff;
-  color: #4b3d64;
-  font-weight: 600;
-}
-
-.hour-label {
-  display: inline-block;
-  padding: 0.2rem 0;
+  /* Adds ellipsis for long text */
+  text-align: left;
 }
 
 .schedule-cell {
   position: relative;
   height: 6rem;
-  background-image: linear-gradient(to right, rgba(103, 80, 164, 0.08) 1px, transparent 1px);
-  background-size: 100% 100%;
+  /* Adjust row height as needed */
 }
 
 .schedule-item {
   background-color: #f0f5ff;
+  /* border: 1px solid #d9d9d9; */
   border-radius: 4px;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
@@ -65,25 +63,30 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   pointer-events: auto;
+  /* Allow interaction with the schedule divs */
   z-index: 1;
   line-height: 2rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
+/* Dynamically calculate the width of hour columns */
 :root {
   --hour-column-width: 100px;
+  /* Default width for hour columns */
 }
 
 .room-1 {
   background-color: #C8E6C9;
+  /* Solid background for room 1 */
 }
 
 .room-2 {
   background-color: #BBDEFB;
+  /* Solid background for room 2 */
 }
 
 .room-3 {
   background-color: #FFCC80;
+  /* Solid background for room 3 */
 }
 
 .state-0 {
@@ -93,6 +96,7 @@
 .state-1 {
   background-color: transparent;
   border: 2px dashed;
+  /* Thick dashed border */
 }
 
 .state-2 {
@@ -111,6 +115,7 @@
   border: 1px dashed darkred;
 }
 
+/* Apply room color to the border of state-1 */
 .room-1.state-1 {
   border-color: green;
 }
@@ -123,11 +128,14 @@
   border-color: orange;
 }
 
+/* Base styles for all schedule items */
 .schedule-item {
   height: 2rem;
   box-sizing: border-box;
+  /* Include border in height */
 }
 
+/* Optional: Add top positioning based on room number */
 .room-1 {
   top: 0;
 }

@@ -1,7 +1,7 @@
 import './App.css';
 import './components/WeekHorizontal.css'; // Add a CSS file for styling
 
-import { DatePicker, Layout, Button, Card, Typography, Flex, Avatar, MenuProps, Dropdown, Divider, ConfigProvider } from 'antd';
+import { DatePicker, Layout, Button, Card, Typography, Flex, Avatar, MenuProps, Dropdown, Divider } from 'antd';
 const { Title } = Typography;
 
 import WeekHorizontal from './components/WeekHorizontal';
@@ -9,6 +9,7 @@ import type { Dayjs } from 'dayjs';
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import { CaretLeftFilled, CaretRightFilled, PlusCircleTwoTone, UserOutlined } from '@ant-design/icons';
 import { Schedule, WeekSchedule } from './Schedule';
 import ModalBooking from './components/ModalBooking';
 import AccountContext, { Account, NullAccount } from './components/AccountContext';
@@ -17,12 +18,6 @@ import Logo from './logo-header.svg';
 dayjs.extend(isoWeek);
 
 const { Header, Content, Footer } = Layout;
-
-const MaterialIcon = ({ name }: { name: string }) => (
-  <span className="material-symbols-outlined app-icon" aria-hidden="true">
-    {name}
-  </span>
-);
 
 const contentStyle: React.CSSProperties = {
   textAlign: 'center',
@@ -311,22 +306,7 @@ function App() {
   return (
     <AccountContext.Provider value={account}>
 
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: '#6750a4',
-            borderRadius: 14,
-            fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
-            colorBgLayout: '#f5f2ff',
-          },
-          components: {
-            Card: {
-              colorBgContainer: '#ffffff',
-            },
-          },
-        }}
-      >
-        <Layout style={pageLayoutStyle}>
+      <Layout style={pageLayoutStyle}>
         <Header style={{
           display: 'flex',
           padding: 0,
@@ -337,7 +317,7 @@ function App() {
           <img src={Logo} style={{ maxWidth: '250px', background: 'transparent' }}></img>
           <div style={headerStyle}>
             {/* Week picker */}
-            <Button onClick={buttonPreviousWeekClickHandler} icon={<MaterialIcon name="chevron_left" />}>Tuần trước</Button>
+            <Button onClick={buttonPreviousWeekClickHandler}><CaretLeftFilled />Tuần trước</Button>
             <DatePicker
               onChange={datePickerValueChangedHandler}
               picker="week"
@@ -345,7 +325,7 @@ function App() {
               format={'wo (YYYY)'}
               value={dayjs(startDate)}
             />
-            <Button onClick={buttonNextWeekClickHandler} icon={<MaterialIcon name="chevron_right" />} iconPosition='end'>Tuần sau</Button>
+            <Button onClick={buttonNextWeekClickHandler}>Tuần sau <CaretRightFilled /></Button>
             {/* Empty space to center the title */}
             <div style={{ flex: 1 }}></div>
 
@@ -364,7 +344,7 @@ function App() {
 
             <Dropdown menu={{ items: accountMenuItems }}>
               <a onClick={(e) => e.preventDefault()} style={{ lineHeight: '0' }}>
-                <Avatar style={{ background: account.isAdmin ? '#d71920' : '#005c9a' }} icon={<MaterialIcon name="person" />} />
+                <Avatar style={{ background: account.isAdmin ? '#d71920' : '#005c9a' }} icon={<UserOutlined />} />
               </a>
             </Dropdown>
           </div>
@@ -385,7 +365,7 @@ function App() {
                   <div className='schedule-item room-3' color='green' >Phòng R3 (T.5)</div>
                   <div className='schedule-item room-1 state-1' color='green' >Chưa duyệt</div>
                   <Divider type='vertical' />
-                  <Button onClick={() => setFormAddBookingOpen(true)} icon={<MaterialIcon name="add_circle" />}>Đặt lịch</Button>
+                  <Button onClick={() => setFormAddBookingOpen(true)}><PlusCircleTwoTone />Đặt lịch</Button>
 
                 </Flex>
               }
@@ -444,7 +424,6 @@ function App() {
           <Typography.Text type="secondary">RoomBooking 0.1.0, tmkhiem 2025</Typography.Text>
         </Footer>
       </Layout >
-      </ConfigProvider>
     </AccountContext.Provider>
   );
 }

@@ -3,6 +3,7 @@ import { DatePicker, Button, Typography, Modal, Form, Input, Select, InputNumber
 import { useContext, useState } from 'react';
 import dayjs from 'dayjs';
 import { Schedule } from '../Schedule';
+import { CheckCircleTwoTone } from '@ant-design/icons';
 import AccountContext from './AccountContext';
 
 const formItemLayout = {
@@ -430,7 +431,7 @@ function ModalBooking(props: ModalBookingProps) {
                 <Button onClick={handleFormReset}>Nhập lại</Button>
                 <Button onClick={handleModalClose} color="danger" variant="outlined">Huỷ</Button>
                 <Button type="primary" htmlType="submit" onClick={handleFormSubmit} loading={confirmLoading} disabled={!isFormValid}>
-                    <span className="material-symbols-outlined app-icon" aria-hidden="true">check_circle</span>Đặt lịch
+                    <CheckCircleTwoTone />Đặt lịch
                 </Button>
 
             </div>
