@@ -4,7 +4,7 @@ This document summarizes the legacy implementation under `/legacy` to support re
 
 ## Scope
 
-- Frontend: `/legacy/frontend` (Vite + React + TypeScript + Ant Design)
+- Frontend: `/legacy/frontend` (Vite + React + TypeScript + Ant Design).
 - Backend: `/legacy/backend` (ASP.NET Core 8 Web API + EF Core SQL Server)
 
 ## High-level architecture
@@ -136,4 +136,3 @@ Diagnostic endpoints:
 - UI + backend are tightly coupled through PascalCase payloads and numeric room/state conventions.
 - No dedicated test suite found in legacy frontend/backend folders.
 - Some legacy code paths are commented out / partially inactive (notably Telegram internals).
-

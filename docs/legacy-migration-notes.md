@@ -4,14 +4,14 @@ This note converts legacy findings into implementation-ready requirements for th
 
 ## Functional requirements to preserve
 
-## 1) Weekly schedule retrieval
+### 1) Weekly schedule retrieval
 
 - Input: a date (`YYYY-MM-DD`)
 - Behavior: compute containing week (Monday-Sunday) and return bookings in that range
 - Output shape used by UI:
   - `Id`, `Creator`, `Name`, `Title`, `Room`, `Date`, `StartTime`, `EndTime`, `State`, optional `Note`
 
-## 2) Booking creation
+### 2) Booking creation
 
 - Authenticated user only
 - Creator/name must come from authenticated identity (not trusted from client)
@@ -20,16 +20,16 @@ This note converts legacy findings into implementation-ready requirements for th
   - Room `1`: starts in waiting-confirmation state
   - Rooms `2` and `3`: starts as booked
 
-## 3) Booking confirmation
+### 3) Booking confirmation
 
 - Admin-only action
 - Only valid for room `1` and waiting-confirmation state
 
-## 4) Booking deletion
+### 4) Booking deletion
 
 - Allowed for booking creator or admin
 
-## 5) Session + identity
+### 5) Session + identity
 
 - Support interactive login flow and authenticated API access
 - Include role resolution (`isAdmin`) for UI authorization behavior
@@ -97,4 +97,3 @@ Also preserve login/logout routes or provide equivalent authentication endpoints
 3. Rebuild API contract and auth/session integration.
 4. Rebuild schedule UI against typed API client.
 5. Add migration scripts and compatibility checks for existing DB data.
-
