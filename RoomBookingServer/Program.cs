@@ -132,6 +132,7 @@ namespace RoomBookingServer
             }).RequireAuthorization();
 
             app.MapGet("/api/bookings/{bookingId:int}/documents/{documentId:long}", async (
+                HttpContext context,
                 int bookingId,
                 long documentId,
                 IDbContextFactory<RoombookingContext> roomFactory,
@@ -141,14 +142,36 @@ namespace RoomBookingServer
                 await using var roomDb = await roomFactory.CreateDbContextAsync(cancellationToken);
                 var document = await roomDb.BookingDocuments
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(d =>
+                    .Where(d =>
                         d.RoomBookingId == bookingId &&
                         d.BookingDocumentId == documentId &&
-                        d.DeletedAtUtc == null, cancellationToken);
+                        d.DeletedAtUtc == null)
+                    .Select(d => new
+                    {
+                        d.StoragePath,
+                        d.OriginalFileName,
+                        d.StoredFileName,
+                        d.ContentType,
+                        BookingCreator = d.RoomBooking.Creator
+                    })
+                    .FirstOrDefaultAsync(cancellationToken);
 
                 if (document is null)
                 {
                     return Results.NotFound();
+                }
+
+                var employeeId = context.User.FindFirstValue("employee_id")
+                                 ?? context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrWhiteSpace(employeeId))
+                {
+                    return Results.Unauthorized();
+                }
+
+                var canDownload = string.Equals(document.BookingCreator, employeeId, StringComparison.OrdinalIgnoreCase);
+                if (!canDownload)
+                {
+                    return Results.Forbid();
                 }
 
                 var stream = await documentStorage.OpenReadAsync(document.StoragePath, cancellationToken);

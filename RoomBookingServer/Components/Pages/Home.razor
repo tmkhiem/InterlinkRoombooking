@@ -161,14 +161,22 @@
 			}
 			@if (_selectedDocuments.Count > 0)
 			{
+				var canDownloadSelectedDocuments = CanDownloadDocuments(_selectedBooking);
 				<p class="details-note-title"><strong>Tài liệu đính kèm:</strong></p>
 				<ul class="document-list">
 					@foreach (var document in _selectedDocuments)
 					{
 						<li>
-							<a href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
-								@document.OriginalFileName
-							</a>
+							@if (canDownloadSelectedDocuments)
+							{
+								<a href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
+									@document.OriginalFileName
+								</a>
+							}
+							else
+							{
+								<span>@document.OriginalFileName</span>
+							}
 							<span class="document-meta">(@FormatFileSize(document.FileSizeBytes))</span>
 						</li>
 					}
@@ -205,69 +213,77 @@
 
 			<h2>@(_editor.RoomBookingId.HasValue ? "Sửa cuộc họp" : "Thêm cuộc họp")</h2>			
 
-			<div class="meeting-editor-form">
-				
-				<label for="meeting-title">Tiêu đề <span class="required-mark">*</span></label>
-				<input id="meeting-title" @bind="_editor.Title" required />
+			<div class="meeting-editor-layout">
+				<div class="meeting-editor-main">
+					<div class="meeting-editor-form">
+						<label for="meeting-title">Tiêu đề <span class="required-mark">*</span></label>
+						<input id="meeting-title" @bind="_editor.Title" required />
 
-				<label for="meeting-date">Ngày <span class="required-mark">*</span></label>
-				<input id="meeting-date" type="date" value="@_editor.DateText" @onchange="e => _editor.DateText = e.Value?.ToString() ?? string.Empty" required />
+						<label for="meeting-date">Ngày <span class="required-mark">*</span></label>
+						<input id="meeting-date" type="date" value="@_editor.DateText" @onchange="e => _editor.DateText = e.Value?.ToString() ?? string.Empty" required />
 
-				<label for="meeting-room">Phòng <span class="required-mark">*</span></label>
-				<select id="meeting-room" @bind="_editor.Room" required>
-					<option value="@Room1">@RoomLabels[Room1]</option>
-					<option value="@Room2">@RoomLabels[Room2]</option>
-					<option value="@Room3">@RoomLabels[Room3]</option>
-				</select>
+						<label for="meeting-room">Phòng <span class="required-mark">*</span></label>
+						<select id="meeting-room" @bind="_editor.Room" required>
+							<option value="@Room1">@RoomLabels[Room1]</option>
+							<option value="@Room2">@RoomLabels[Room2]</option>
+							<option value="@Room3">@RoomLabels[Room3]</option>
+						</select>
 
-				<label for="meeting-start">Bắt đầu <span class="required-mark">*</span></label>
-				<input id="meeting-start" type="time" step="60" value="@_editor.StartTimeText" @onchange="e => _editor.StartTimeText = e.Value?.ToString() ?? string.Empty" required />
+						<label for="meeting-start">Bắt đầu <span class="required-mark">*</span></label>
+						<input id="meeting-start" type="time" step="60" value="@_editor.StartTimeText" @onchange="e => _editor.StartTimeText = e.Value?.ToString() ?? string.Empty" required />
 
-				<label for="meeting-end">Kết thúc <span class="required-mark">*</span></label>
-				<input id="meeting-end" type="time" step="60" value="@_editor.EndTimeText" @onchange="e => _editor.EndTimeText = e.Value?.ToString() ?? string.Empty" required />
+						<label for="meeting-end">Kết thúc <span class="required-mark">*</span></label>
+						<input id="meeting-end" type="time" step="60" value="@_editor.EndTimeText" @onchange="e => _editor.EndTimeText = e.Value?.ToString() ?? string.Empty" required />
 
-				<label for="meeting-note">Ghi chú</label>
-				<textarea id="meeting-note" rows="3" @bind="_editor.Note"></textarea>
-
-				<label for="meeting-documents">Tài liệu đính kèm</label>
-				<div class="document-editor-panel">
-					<InputFile id="meeting-documents" OnChange="OnEditorFilesChanged" multiple />
-					@if (_editorExistingDocuments.Count > 0)
-					{
-						<p class="editor-documents-label">Tài liệu hiện có:</p>
-						<ul class="document-list">
-							@foreach (var document in _editorExistingDocuments)
-							{
-								<li>
-									<a href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
-										@document.OriginalFileName
-									</a>
-									<span class="document-meta">(@FormatFileSize(document.FileSizeBytes))</span>
-									<button type="button" class="danger icon-button mini-icon-button" @onclick="() => RemoveExistingDocument(document.BookingDocumentId)">
-										<span class="material-symbols-outlined" aria-hidden="true">delete</span>
-										<span>Xóa</span>
-									</button>
-								</li>
-							}
-						</ul>
-					}
-					@if (_editorPendingFiles.Count > 0)
-					{
-						<p class="editor-documents-label">Tập tin sẽ tải lên:</p>
-						<ul class="document-list">
-							@foreach (var file in _editorPendingFiles)
-							{
-								<li>
-									<span>@file.File.Name</span>
-									<span class="document-meta">(@FormatFileSize(file.Size))</span>
-									<button type="button" class="danger icon-button mini-icon-button" @onclick="() => RemovePendingFile(file.Token)">
-										<span class="material-symbols-outlined" aria-hidden="true">close</span>
-										<span>Bỏ</span>
-									</button>
-								</li>
-							}
-						</ul>
-					}
+						<label for="meeting-note">Ghi chú</label>
+						<textarea id="meeting-note" rows="3" @bind="_editor.Note"></textarea>
+					</div>
+				</div>
+				<div class="meeting-editor-documents">
+					<label for="meeting-documents">Tài liệu đính kèm</label>
+					<div class="document-editor-panel">
+						<div class="document-dropzone" @ondragover:preventDefault @ondrop:preventDefault>
+							<InputFile id="meeting-documents" class="document-dropzone-input" OnChange="OnEditorFilesChanged" multiple />
+							<p class="document-dropzone-title">Kéo thả tập tin vào đây hoặc nhấn để chọn</p>
+							<p class="document-dropzone-subtitle">Tối đa @MaxUploadFileCount tập tin, mỗi tập tin @((MaxUploadFileSizeBytes / 1024 / 1024).ToString()) MB</p>
+						</div>
+						@if (_editorExistingDocuments.Count > 0)
+						{
+							<p class="editor-documents-label">Tài liệu hiện có:</p>
+							<ul class="document-list">
+								@foreach (var document in _editorExistingDocuments)
+								{
+									<li>
+										<a href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
+											@document.OriginalFileName
+										</a>
+										<span class="document-meta">(@FormatFileSize(document.FileSizeBytes))</span>
+										<button type="button" class="danger icon-button mini-icon-button" @onclick="() => RemoveExistingDocument(document.BookingDocumentId)">
+											<span class="material-symbols-outlined" aria-hidden="true">delete</span>
+											<span>Xóa</span>
+										</button>
+									</li>
+								}
+							</ul>
+						}
+						@if (_editorPendingFiles.Count > 0)
+						{
+							<p class="editor-documents-label">Tập tin sẽ tải lên:</p>
+							<ul class="document-list">
+								@foreach (var file in _editorPendingFiles)
+								{
+									<li>
+										<span>@file.File.Name</span>
+										<span class="document-meta">(@FormatFileSize(file.Size))</span>
+										<button type="button" class="danger icon-button mini-icon-button" @onclick="() => RemovePendingFile(file.Token)">
+											<span class="material-symbols-outlined" aria-hidden="true">close</span>
+											<span>Bỏ</span>
+										</button>
+									</li>
+								}
+							</ul>
+						}
+					</div>
 				</div>
 			</div>
 
@@ -472,7 +488,8 @@
 			return;
 		}
 
-		if (_editorPendingFiles.Count > MaxUploadFileCount)
+		var totalDocumentCount = _editorExistingDocuments.Count + _editorPendingFiles.Count;
+		if (totalDocumentCount > MaxUploadFileCount)
 		{
 			_error = $"Chỉ được tải tối đa {MaxUploadFileCount} tập tin.";
 			return;
@@ -685,7 +702,7 @@
 	private async Task OnEditorFilesChanged(InputFileChangeEventArgs eventArgs)
 	{
 		_error = null;
-		var remainingCapacity = MaxUploadFileCount - _editorPendingFiles.Count;
+		var remainingCapacity = MaxUploadFileCount - (_editorExistingDocuments.Count + _editorPendingFiles.Count);
 		if (remainingCapacity <= 0 || eventArgs.FileCount > remainingCapacity)
 		{
 			_error = $"Chỉ được tải tối đa {MaxUploadFileCount} tập tin.";
@@ -743,6 +760,8 @@
 
 	private static string GetDocumentDownloadUrl(int bookingId, long documentId)
 		=> $"/api/bookings/{bookingId}/documents/{documentId}";
+
+	private bool CanDownloadDocuments(Booking booking) => CanEdit(booking);
 
 	private bool CanEdit(Booking booking) => string.Equals(booking.Creator, _employeeId, StringComparison.OrdinalIgnoreCase);
 
