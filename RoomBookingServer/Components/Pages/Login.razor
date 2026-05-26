@@ -18,10 +18,10 @@
 
         <form method="post" action="/auth/login">
             <label for="employeeId">Mã nhân viên</label>
-            <input id="employeeId" name="employeeId" required maxlength="10" />
+            <input id="employeeId" name="employeeId" required maxlength="10" autocomplete="username" />
 
             <label for="password">Mật khẩu</label>
-            <input id="password" name="password" type="password" required />
+            <input id="password" name="password" type="password" required autocomplete="current-password" />
 
             <button type="submit">Đăng nhập</button>
         </form>
