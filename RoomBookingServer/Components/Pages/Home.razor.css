@@ -555,6 +555,14 @@ button {
     cursor: pointer;
 }
 
+.document-dropzone-input::file-selector-button {
+    display: none;
+}
+
+.document-dropzone-input::-webkit-file-upload-button {
+    display: none;
+}
+
 .document-dropzone-title,
 .document-dropzone-subtitle {
     margin: 0;
@@ -589,9 +597,53 @@ button {
         flex-wrap: wrap;
     }
 
+.upload-status-list {
+    padding-left: 0;
+    list-style: none;
+}
+
+    .upload-status-list .upload-status-item {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: .4rem;
+        margin-bottom: .35rem;
+    }
+
+.upload-file-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.upload-progress {
+    width: 130px;
+    height: .65rem;
+}
+
+.upload-status-text {
+    width: 5.9rem;
+    font-size: .82rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.upload-success-check {
+    display: inline-flex;
+    align-items: center;
+}
+
+    .upload-success-check input {
+        width: 1rem;
+        height: 1rem;
+        margin: 0;
+    }
+
 .document-meta {
     color: var(--color-text-muted);
     font-size: .85rem;
+    white-space: nowrap;
 }
 
 .mini-icon-button {
@@ -599,7 +651,7 @@ button {
     font-size: .8rem;
 }
 
-.modal-card input,
+.modal-card input:not([type="checkbox"]):not([type="file"]),
 .modal-card select,
 .modal-card textarea {
     width: 100%;

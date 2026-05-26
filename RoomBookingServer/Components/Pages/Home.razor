@@ -243,7 +243,7 @@
 					<label for="meeting-documents">Tài liệu đính kèm</label>
 					<div class="document-editor-panel">
 						<div class="document-dropzone" @ondragover:preventDefault @ondrop:preventDefault>
-							<InputFile id="meeting-documents" class="document-dropzone-input" OnChange="OnEditorFilesChanged" multiple />
+							<InputFile id="meeting-documents" class="document-dropzone-input" OnChange="OnEditorFilesChanged" multiple disabled="@_isSavingMeeting" />
 							<p class="document-dropzone-title">Kéo thả tập tin vào đây hoặc nhấn để chọn</p>
 							<p class="document-dropzone-subtitle">Tối đa @MaxUploadFileCount tập tin, mỗi tập tin @((MaxUploadFileSizeBytes / 1024 / 1024).ToString()) MB</p>
 						</div>
@@ -269,13 +269,18 @@
 						@if (_editorPendingFiles.Count > 0)
 						{
 							<p class="editor-documents-label">Tập tin sẽ tải lên:</p>
-							<ul class="document-list">
+							<ul class="document-list upload-status-list">
 								@foreach (var file in _editorPendingFiles)
 								{
-									<li>
-										<span>@file.File.Name</span>
+									<li class="upload-status-item">
+										<span class="upload-file-name" title="@file.File.Name">@file.File.Name</span>
 										<span class="document-meta">(@FormatFileSize(file.Size))</span>
-										<button type="button" class="danger icon-button mini-icon-button" @onclick="() => RemovePendingFile(file.Token)">
+										<progress class="upload-progress" max="100" value="@file.ProgressPercent"></progress>
+										<span class="upload-status-text">@GetUploadStatusText(file)</span>
+										<label class="upload-success-check" title="Tải lên thành công">
+											<input type="checkbox" checked="@file.IsUploaded" disabled />
+										</label>
+										<button type="button" class="danger icon-button mini-icon-button" disabled="@(_isSavingMeeting || file.IsUploaded)" @onclick="() => RemovePendingFile(file.Token)">
 											<span class="material-symbols-outlined" aria-hidden="true">close</span>
 											<span>Bỏ</span>
 										</button>
@@ -288,8 +293,8 @@
 			</div>
 
 			<div class="modal-actions">
-				<button class="primary icon-button" @onclick="SaveMeetingAsync"><span class="material-symbols-outlined" aria-hidden="true">save</span><span>Lưu</span></button>
-				<button class="icon-button" @onclick="CloseEditor"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Hủy</span></button>
+				<button class="primary icon-button" @onclick="SaveMeetingAsync" disabled="@_isSavingMeeting"><span class="material-symbols-outlined" aria-hidden="true">save</span><span>Lưu</span></button>
+				<button class="icon-button" @onclick="CloseEditor" disabled="@_isSavingMeeting"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Hủy</span></button>
 			</div>
 		</div>
 	</div>
@@ -328,6 +333,7 @@
 	private List<BookingDocumentViewModel> _editorExistingDocuments = [];
 	private readonly HashSet<long> _documentsMarkedForDeletion = [];
 	private readonly List<PendingUploadFile> _editorPendingFiles = [];
+	private bool _isSavingMeeting;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -551,6 +557,8 @@
 		booking.State = booking.Room == Room1 ? Booking.ConfirmationWait : Booking.Booked;
 
 		var uploadedStoragePaths = new List<string>();
+		_isSavingMeeting = true;
+		await InvokeAsync(StateHasChanged);
 		try
 		{
 			await db.SaveChangesAsync();
@@ -574,6 +582,10 @@
 
 			foreach (var pendingFile in _editorPendingFiles)
 			{
+				pendingFile.ProgressPercent = 10;
+				pendingFile.IsUploaded = false;
+				await InvokeAsync(StateHasChanged);
+
 				await using var stream = pendingFile.File.OpenReadStream(MaxUploadFileSizeBytes);
 				var stored = await DocumentStorage.SaveAsync(
 					stream,
@@ -581,6 +593,9 @@
 					pendingFile.File.ContentType,
 					_employeeId);
 				uploadedStoragePaths.Add(stored.StoragePath);
+				pendingFile.ProgressPercent = 100;
+				pendingFile.IsUploaded = true;
+				await InvokeAsync(StateHasChanged);
 
 				db.BookingDocuments.Add(new BookingDocument
 				{
@@ -607,6 +622,11 @@
 
 			_error = "Không thể lưu tập tin đính kèm.";
 			return;
+		}
+		finally
+		{
+			_isSavingMeeting = false;
+			await InvokeAsync(StateHasChanged);
 		}
 
 		_showEditor = false;
@@ -749,6 +769,11 @@
 
 	private void RemovePendingFile(Guid token)
 	{
+		if (_isSavingMeeting)
+		{
+			return;
+		}
+
 		_editorPendingFiles.RemoveAll(file => file.Token == token);
 	}
 
@@ -771,6 +796,10 @@
 
 	private static string GetDocumentDownloadUrl(int bookingId, long documentId)
 		=> $"/api/bookings/{bookingId}/documents/{documentId}";
+
+	private static string GetUploadStatusText(PendingUploadFile file) => file.IsUploaded
+		? "Đã tải lên"
+		: file.ProgressPercent > 0 ? "Đang tải lên" : "Chờ tải lên";
 
 	private bool CanDownloadDocuments(Booking booking) => CanEdit(booking);
 
@@ -858,10 +887,21 @@
 		string OriginalFileName,
 		long FileSizeBytes);
 
-	private sealed record PendingUploadFile(
-		Guid Token,
-		IBrowserFile File,
-		long Size);
+	private sealed class PendingUploadFile
+	{
+		public PendingUploadFile(Guid token, IBrowserFile file, long size)
+		{
+			Token = token;
+			File = file;
+			Size = size;
+		}
+
+		public Guid Token { get; }
+		public IBrowserFile File { get; }
+		public long Size { get; }
+		public int ProgressPercent { get; set; }
+		public bool IsUploaded { get; set; }
+	}
 
 	private sealed class MeetingEditorModel
 	{
