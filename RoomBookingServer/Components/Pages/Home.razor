@@ -385,7 +385,7 @@
         if (_editor.RoomBookingId.HasValue)
         {
             booking = await db.Bookings.FirstOrDefaultAsync(b => b.RoomBookingId == _editor.RoomBookingId.Value)
-                      ?? throw new InvalidOperationException("Booking not found.");
+                      ?? throw new InvalidOperationException("Không tìm thấy cuộc đặt phòng.");
 
             if (!CanEdit(booking))
             {
