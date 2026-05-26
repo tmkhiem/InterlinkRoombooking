@@ -560,14 +560,14 @@
 
     private static string GetMeetingQuickDetails(Booking booking)
     {
-        var creator = string.IsNullOrWhiteSpace(booking.Creator)
+        var creatorDisplay = string.IsNullOrWhiteSpace(booking.Creator)
             ? booking.Name
             : string.IsNullOrWhiteSpace(booking.Name)
                 ? booking.Creator
                 : $"{booking.Creator} {booking.Name}";
 
-        var creatorText = string.IsNullOrWhiteSpace(creator) ? "không rõ người đặt" : $"do {creator} đặt";
-        return $"{booking.Title} (phòng R{booking.Room}, {creatorText}) - {booking.StartTime:HH\\:mm} - {booking.EndTime:HH\\:mm}";
+        var creatorText = string.IsNullOrWhiteSpace(creatorDisplay) ? "không rõ người đặt" : $"do {creatorDisplay} đặt";
+        return $"{booking.Title} (phòng R{booking.Room}, {creatorText}) - {booking.StartTime:HH:mm} - {booking.EndTime:HH:mm}";
     }
 
     private sealed class MeetingEditorModel
