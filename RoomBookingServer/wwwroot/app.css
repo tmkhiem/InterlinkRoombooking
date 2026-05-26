@@ -4,9 +4,11 @@ h1:focus {
 
 html,
 body {
+    height: 100%;
+    margin: 0;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
     background-color: #e0dbd4;
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjgwMCI+CiAgPGZpbHRlciBpZD0ibSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj4KICAgIDxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjAxMyAwLjAwOCIgbnVtT2N0YXZlcz0iNiIgc2VlZD0iMiIgcmVzdWx0PSJuIi8+CiAgICA8ZmVDb2xvck1hdHJpeCB0eXBlPSJzYXR1cmF0ZSIgdmFsdWVzPSIwLjQ1IiBpbj0ibiIgcmVzdWx0PSJzIi8+CiAgICA8ZmVDb21wb25lbnRUcmFuc2ZlciBpbj0icyI+CiAgICAgIDxmZUZ1bmNSIHR5cGU9ImxpbmVhciIgc2xvcGU9IjAuMjIiIGludGVyY2VwdD0iMC43NSIvPgogICAgICA8ZmVGdW5jRyB0eXBlPSJsaW5lYXIiIHNsb3BlPSIwLjE4IiBpbnRlcmNlcHQ9IjAuNzIiLz4KICAgICAgPGZlRnVuY0IgdHlwZT0ibGluZWFyIiBzbG9wZT0iMC4xMyIgaW50ZXJjZXB0PSIwLjY4Ii8+CiAgICAgIDxmZUZ1bmNBIHR5cGU9ImxpbmVhciIgc2xvcGU9IjAiIGludGVyY2VwdD0iMSIvPgogICAgPC9mZUNvbXBvbmVudFRyYW5zZmVyPgogIDwvZmlsdGVyPgogIDxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjgwMCIgZmlsdGVyPSJ1cmwoI20pIi8+Cjwvc3ZnPg==");
+    background-image: url("/marble-bg-main.jpg");
     background-size: cover;
     background-attachment: fixed;
     background-position: center;

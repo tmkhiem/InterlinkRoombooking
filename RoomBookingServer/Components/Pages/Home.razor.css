@@ -1,9 +1,12 @@
 .booking-page {
+    height: 100vh;
     padding: 1.1rem;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: .9rem;
     overflow-x: auto;
+    overflow-y: auto;
 }
 
 .top-bar {
@@ -451,18 +454,3 @@ button {
     gap: .5rem;
 }
 
-@media (max-width: 1280px) {
-    .top-bar {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .top-bar-main {
-        order: 3;
-        width: 100%;
-    }
-
-    .user-panel {
-        margin-left: auto;
-    }
-}

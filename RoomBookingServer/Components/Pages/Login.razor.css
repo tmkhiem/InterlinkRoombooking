@@ -1,11 +1,14 @@
 .login-page {
     min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    box-sizing: border-box;
     background-color: #0d1528;
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjgwMCI+CiAgPGZpbHRlciBpZD0ibSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj4KICAgIDxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjAxNSAwLjAwOSIgbnVtT2N0YXZlcz0iNiIgc2VlZD0iNyIgcmVzdWx0PSJuIi8+CiAgICA8ZmVDb2xvck1hdHJpeCB0eXBlPSJzYXR1cmF0ZSIgdmFsdWVzPSIwLjYiIGluPSJuIiByZXN1bHQ9InMiLz4KICAgIDxmZUNvbXBvbmVudFRyYW5zZmVyIGluPSJzIj4KICAgICAgPGZlRnVuY1IgdHlwZT0ibGluZWFyIiBzbG9wZT0iMC4yMCIgaW50ZXJjZXB0PSIwLjA0Ii8+CiAgICAgIDxmZUZ1bmNHIHR5cGU9ImxpbmVhciIgc2xvcGU9IjAuMjIiIGludGVyY2VwdD0iMC4wNyIvPgogICAgICA8ZmVGdW5jQiB0eXBlPSJsaW5lYXIiIHNsb3BlPSIwLjMwIiBpbnRlcmNlcHQ9IjAuMTIiLz4KICAgICAgPGZlRnVuY0EgdHlwZT0ibGluZWFyIiBzbG9wZT0iMCIgaW50ZXJjZXB0PSIxIi8+CiAgICA8L2ZlQ29tcG9uZW50VHJhbnNmZXI+CiAgPC9maWx0ZXI+CiAgPHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iODAwIiBmaWx0ZXI9InVybCgjbSkiLz4KPC9zdmc+");
+    background-image: url("/marble-bg-login.jpg");
     background-size: cover;
     background-position: center;
 }
