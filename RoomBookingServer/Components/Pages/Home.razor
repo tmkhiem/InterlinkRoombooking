@@ -86,10 +86,14 @@
                         }
 
                         <td class="schedule-lane" colspan="@Hours.Length">
-                            <div class="hour-grid">                                
+                            <div class="hour-grid">
                                 @for (var hourIndex = 1; hourIndex < Hours.Length; hourIndex++)
                                 {
                                     <span class="hour-divider" style="@($"left: {(hourIndex * 100d / Hours.Length):F4}%")"></span>
+                                }
+                                @if (TryGetCurrentTimeMarkerStyle(date, out var currentTimeMarkerStyle))
+                                {
+                                    <span class="current-time-marker" style="@currentTimeMarkerStyle" aria-hidden="true"></span>
                                 }
                                 @foreach (var booking in GetBookingsForLane(date, room))
                                 {
@@ -305,6 +309,32 @@
         var leftPercent = startMinutes * 100d / totalMinutes;
         var widthPercent = (endMinutes - startMinutes) * 100d / totalMinutes;
         return $"left: {leftPercent:F4}%; width: {widthPercent:F4}%;";
+    }
+
+    private static bool TryGetCurrentTimeMarkerStyle(DateOnly date, out string style)
+    {
+        var now = TimeProvider.System.GetLocalNow().DateTime;
+        if (DateOnly.FromDateTime(now) != date)
+        {
+            style = string.Empty;
+            return false;
+        }
+
+        var currentTime = TimeOnly.FromDateTime(now);
+        var start = new TimeOnly(CalendarStartHour, 0);
+        var end = start.AddHours(CalendarHourCount);
+        if (currentTime < start || currentTime > end)
+        {
+            style = string.Empty;
+            return false;
+        }
+
+        var totalMinutes = CalendarHourCount * 60d;
+        var currentMinutes = ((currentTime.Hour - CalendarStartHour) * 60d) + currentTime.Minute + (currentTime.Second / 60d);
+        currentMinutes = Math.Clamp(currentMinutes, 0d, totalMinutes);
+        var leftPercent = currentMinutes * 100d / totalMinutes;
+        style = $"left: {leftPercent:F4}%;";
+        return true;
     }
 
     private void OpenNewMeeting()

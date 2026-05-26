@@ -259,6 +259,28 @@ button.danger {
     background: #ebe5f7;
 }
 
+.current-time-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-1px);
+    background: #b3261e;
+    z-index: 5;
+    pointer-events: none;
+    box-shadow: -6px 0 8px rgba(179, 38, 30, .32), -18px 0 18px rgba(179, 38, 30, .2);
+}
+
+.current-time-marker::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 100%;
+    width: 64px;
+    background: linear-gradient(to left, rgba(179, 38, 30, .26), rgba(179, 38, 30, 0));
+}
+
 .lane-label {
     position: absolute;
     left: .45rem;
