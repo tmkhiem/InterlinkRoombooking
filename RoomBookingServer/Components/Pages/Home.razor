@@ -254,11 +254,12 @@
 								<p class="document-dropzone-title">Kéo thả tập tin vào đây</p>
 								<p id="meeting-documents-help" class="document-dropzone-subtitle">Tối đa @MaxUploadFileCount tập tin, mỗi tập tin @((MaxUploadFileSizeBytes / 1024 / 1024).ToString()) MB</p>
 								<button type="button"
-									class="icon-button document-dropzone-button"
-									data-input-id="meeting-documents"
-									aria-describedby="meeting-documents-help"
-									onclick="window.roomBookingDropzone?.openPicker(event)"
-									disabled="@_isSavingMeeting">
+										class="icon-button document-dropzone-button"
+										data-input-id="meeting-documents"
+										aria-describedby="meeting-documents-help"
+										onclick="window.roomBookingDropzone?.openPicker(event)"
+										style="visibility:hidden"
+										disabled="@_isSavingMeeting">
 									<span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
 									<span>Chọn tập tin</span>
 								</button>

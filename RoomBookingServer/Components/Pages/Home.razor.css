@@ -393,7 +393,7 @@ button {
 
 .modal-card {
     background: #fff;
-    width: min(520px, calc(100vw - 2rem));
+    width: min(520px, calc(100vw - 10rem));
     border-radius: 1rem;
     padding: 1rem;
     display: flex;
@@ -413,7 +413,7 @@ button {
 
 .meeting-editor-card {
     width: min(980px, calc(100vw - 2rem));
-    max-height: calc(100vh - 2rem);
+    max-height: calc(100vh - 10rem);
     padding: 1.4rem 1.7rem;
     gap: .85rem;
 }
@@ -434,11 +434,14 @@ button {
 
 .meeting-editor-main {
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .meeting-editor-form {
     display: grid;
-    grid-template-columns: minmax(140px, 170px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 0.2fr) minmax(0, 1fr);
     column-gap: 1.5rem;
     row-gap: 1rem;
     align-items: center;
