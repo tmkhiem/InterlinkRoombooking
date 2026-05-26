@@ -1,7 +1,7 @@
 window.roomBookingDropzone = {
     openPicker(event) {
         const zone = event.currentTarget;
-        const input = this.#resolveInput(zone);
+        const input = this.resolveInput(zone);
         if (!input || input.disabled) {
             return;
         }
@@ -17,7 +17,7 @@ window.roomBookingDropzone = {
         event.preventDefault();
 
         const zone = event.currentTarget;
-        const input = this.#resolveInput(zone);
+        const input = this.resolveInput(zone);
         if (!input || input.disabled) {
             return;
         }
@@ -36,7 +36,7 @@ window.roomBookingDropzone = {
         input.dispatchEvent(new Event("change", { bubbles: true }));
     },
 
-    #resolveInput(zone) {
+    resolveInput(zone) {
         const inputId = zone?.dataset?.inputId;
         if (!inputId) {
             return null;
