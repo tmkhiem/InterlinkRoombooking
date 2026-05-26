@@ -7,7 +7,7 @@
 @inject IDbContextFactory<RoombookingContext> RoomDbFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>Room Booking</PageTitle>
+<PageTitle>Đặt Phòng</PageTitle>
 
 <div class="booking-page">
     <header class="top-bar">
@@ -18,20 +18,20 @@
             <section class="toolbar">
                 <button class="icon-button" @onclick="PreviousWeek">
                     <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
-                    <span>Previous week</span>
+                    <span>Tuần trước</span>
                 </button>
                 <button class="icon-button" @onclick="GoToCurrentWeek">
                     <span class="material-symbols-outlined" aria-hidden="true">today</span>
-                    <span>Current week</span>
+                    <span>Tuần hiện tại</span>
                 </button>
                 <button class="icon-button" @onclick="NextWeek">
                     <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-                    <span>Next week</span>
+                    <span>Tuần sau</span>
                 </button>
-                <strong class="week-label"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>Week of @_weekStart.ToString("dd/MM/yyyy")</strong>
+                <strong class="week-label"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>Tuần từ @_weekStart.ToString("dd/MM/yyyy")</strong>
                 <button class="primary icon-button" @onclick="OpenNewMeeting">
                     <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
-                    <span>Add meeting</span>
+                    <span>Thêm cuộc họp</span>
                 </button>
             </section>
         </div>
@@ -40,15 +40,15 @@
                 <span class="employee-name">@_displayName</span>
                 @if (_isAdmin)
                 {
-                    <span class="role-pill">Admin</span>
+                    <span class="role-pill">Quản trị</span>
                 }
             </div>
             <div class="user-menu">
-                <button type="button" class="user-menu-trigger" aria-label="User menu">
+                <button type="button" class="user-menu-trigger" aria-label="Menu người dùng">
                     <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
                 </button>
                 <div class="user-menu-panel">
-                    <a href="/auth/logout" class="logout-link"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Logout</a>
+                    <a href="/auth/logout" class="logout-link"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Đăng xuất</a>
                 </div>
             </div>
         </div>
@@ -80,7 +80,7 @@
                         @if (laneIndex == 0)
                         {
                             <td class="day-cell" rowspan="3">
-                                @date.ToString("dddd", CultureInfo.InvariantCulture)<br />
+                                @date.ToString("dddd", VietnameseCulture)<br />
                                 <span>@date.ToString("dd/MM/yyyy")</span>
                             </td>
                         }
@@ -116,57 +116,57 @@
         <div class="modal-card booking-details-card">
             <div class="details-spacer"></div>
             <h2 class="details-title">
-                Meeting
+                Cuộc họp
                 <span class="details-accent-red">@_selectedBooking.Title</span>
             </h2>
             <p class="details-paragraph">
-                This meeting @DetermineMeetingTimePhrase(_selectedBooking) in room
+                Cuộc họp này @DetermineMeetingTimePhrase(_selectedBooking) tại phòng
                 <span class="details-accent-blue">R@_selectedBooking.Room</span>
-                on
-                <span class="details-accent-red">@_selectedBooking.Date.ToString("dddd, dd/MM/yyyy", CultureInfo.InvariantCulture)</span>
-                from
+                vào ngày
+                <span class="details-accent-red">@_selectedBooking.Date.ToString("dddd, dd/MM/yyyy", VietnameseCulture)</span>
+                từ
                 <span class="details-accent-blue">@_selectedBooking.StartTime.ToString("HH:mm")</span>
-                to
+                đến
                 <span class="details-accent-blue">@_selectedBooking.EndTime.ToString("HH:mm")</span>.
             </p>
             <hr class="details-divider" />
             <p class="details-paragraph">
-                This booking was created by
+                Cuộc đặt phòng này được tạo bởi
                 <span class="details-accent-red">@_selectedBooking.Creator</span>
                 (<span class="details-accent-red">@_selectedBooking.Name</span>).
             </p>
             <p class="details-paragraph">
-                Status:
+                Trạng thái:
                 <span class="details-status-text">@StateText(_selectedBooking.State)</span>
             </p>
             @if (_selectedBooking.State == Booking.ConfirmationWait)
             {
-                <p class="details-pending">This booking is waiting for confirmation.</p>
+                <p class="details-pending">Cuộc đặt phòng này đang chờ xác nhận.</p>
             }
             @if (!string.IsNullOrWhiteSpace(_selectedBooking.Note))
             {
-                <p class="details-note-title"><strong>Note:</strong></p>
+                <p class="details-note-title"><strong>Ghi chú:</strong></p>
                 <blockquote class="details-note-content">@_selectedBooking.Note</blockquote>
             }
             else
             {
-                <p class="details-note-title"><strong>No note.</strong></p>
+                <p class="details-note-title"><strong>Không có ghi chú.</strong></p>
             }
 
             <div class="modal-actions">
                 @if (CanEdit(_selectedBooking))
                 {
-                    <button class="icon-button" @onclick="OpenEditMeeting"><span class="material-symbols-outlined" aria-hidden="true">edit</span><span>Edit</span></button>
+                    <button class="icon-button" @onclick="OpenEditMeeting"><span class="material-symbols-outlined" aria-hidden="true">edit</span><span>Sửa</span></button>
                 }
                 @if (CanDelete(_selectedBooking))
                 {
-                    <button class="danger icon-button" @onclick="DeleteSelectedMeeting"><span class="material-symbols-outlined" aria-hidden="true">delete</span><span>Delete</span></button>
+                    <button class="danger icon-button" @onclick="DeleteSelectedMeeting"><span class="material-symbols-outlined" aria-hidden="true">delete</span><span>Xóa</span></button>
                 }
                 @if (CanConfirm(_selectedBooking))
                 {
-                    <button class="primary icon-button" @onclick="ConfirmSelectedMeeting"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>Confirm</span></button>
+                    <button class="primary icon-button" @onclick="ConfirmSelectedMeeting"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>Xác nhận</span></button>
                 }
-                <button class="icon-button" @onclick="CloseDetails"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Close</span></button>
+                <button class="icon-button" @onclick="CloseDetails"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Đóng</span></button>
             </div>
         </div>
     </div>
@@ -176,33 +176,33 @@
 {
     <div class="modal-backdrop">
         <div class="modal-card">
-            <h2>@(_editor.RoomBookingId.HasValue ? "Edit meeting" : "Add meeting")</h2>
+            <h2>@(_editor.RoomBookingId.HasValue ? "Sửa cuộc họp" : "Thêm cuộc họp")</h2>
 
-            <label>Title</label>
+            <label>Tiêu đề</label>
             <input @bind="_editor.Title" />
 
-            <label>Date</label>
+            <label>Ngày</label>
             <input type="date" value="@_editor.DateText" @onchange="e => _editor.DateText = e.Value?.ToString() ?? string.Empty" />
 
-            <label>Room</label>
+            <label>Phòng</label>
             <select @bind="_editor.Room">
                 <option value="@Room1">@RoomLabels[Room1]</option>
                 <option value="@Room2">@RoomLabels[Room2]</option>
                 <option value="@Room3">@RoomLabels[Room3]</option>
             </select>
 
-            <label>Start</label>
+            <label>Bắt đầu</label>
             <input type="time" step="60" value="@_editor.StartTimeText" @onchange="e => _editor.StartTimeText = e.Value?.ToString() ?? string.Empty" />
 
-            <label>End</label>
+            <label>Kết thúc</label>
             <input type="time" step="60" value="@_editor.EndTimeText" @onchange="e => _editor.EndTimeText = e.Value?.ToString() ?? string.Empty" />
 
-            <label>Note</label>
+            <label>Ghi chú</label>
             <textarea rows="3" @bind="_editor.Note"></textarea>
 
             <div class="modal-actions">
-                <button class="primary icon-button" @onclick="SaveMeetingAsync"><span class="material-symbols-outlined" aria-hidden="true">save</span><span>Save</span></button>
-                <button class="icon-button" @onclick="CloseEditor"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Cancel</span></button>
+                <button class="primary icon-button" @onclick="SaveMeetingAsync"><span class="material-symbols-outlined" aria-hidden="true">save</span><span>Lưu</span></button>
+                <button class="icon-button" @onclick="CloseEditor"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Hủy</span></button>
             </div>
         </div>
     </div>
@@ -217,11 +217,12 @@
     private const int CalendarHourCount = 14;
     private static readonly IReadOnlyDictionary<int, string> RoomLabels = new Dictionary<int, string>
     {
-        [Room1] = "R1 (confirmation required)",
+        [Room1] = "R1 (cần xác nhận)",
         [Room2] = "R2",
         [Room3] = "R3"
     };
     private static readonly int[] Hours = Enumerable.Range(CalendarStartHour, CalendarHourCount).ToArray();
+    private static readonly CultureInfo VietnameseCulture = new CultureInfo("vi-VN");
 
     private DateOnly _weekStart = StartOfWeek(DateOnly.FromDateTime(DateTime.Today));
     private List<Booking> _bookings = [];
@@ -333,31 +334,31 @@
 
         if (!DateOnly.TryParse(_editor.DateText, out var date))
         {
-            _error = "Invalid date.";
+            _error = "Ngày không hợp lệ.";
             return;
         }
 
         if (!TimeOnly.TryParse(_editor.StartTimeText, out var startTime) || !TimeOnly.TryParse(_editor.EndTimeText, out var endTime))
         {
-            _error = "Invalid time.";
+            _error = "Thời gian không hợp lệ.";
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_editor.Title))
         {
-            _error = "Title is required.";
+            _error = "Tiêu đề không được để trống.";
             return;
         }
 
         if (startTime >= endTime)
         {
-            _error = "Start time must be before end time.";
+            _error = "Thời gian bắt đầu phải trước thời gian kết thúc.";
             return;
         }
 
         if (_editor.Room is < Room1 or > Room3)
         {
-            _error = "Room is invalid.";
+            _error = "Phòng không hợp lệ.";
             return;
         }
 
@@ -376,7 +377,7 @@
 
         if (await overlapQuery.AnyAsync())
         {
-            _error = "Booking overlaps with an existing meeting.";
+            _error = "Cuộc đặt phòng bị trùng với cuộc họp khác.";
             return;
         }
 
@@ -388,7 +389,7 @@
 
             if (!CanEdit(booking))
             {
-                _error = "Only the creator can edit this meeting.";
+                _error = "Chỉ người tạo mới có thể sửa cuộc họp này.";
                 return;
             }
         }
@@ -420,7 +421,7 @@
     {
         if (_selectedBooking is null || !CanDelete(_selectedBooking))
         {
-            _error = "You are not allowed to delete this meeting.";
+            _error = "Bạn không có quyền xóa cuộc họp này.";
             return;
         }
 
@@ -428,7 +429,7 @@
         var booking = await db.Bookings.FirstOrDefaultAsync(b => b.RoomBookingId == _selectedBooking.RoomBookingId);
         if (booking is null)
         {
-            _error = "Meeting not found.";
+            _error = "Không tìm thấy cuộc họp.";
             return;
         }
 
@@ -444,7 +445,7 @@
     {
         if (_selectedBooking is null || !CanConfirm(_selectedBooking))
         {
-            _error = "Only admins can confirm room 1 meetings that are waiting for confirmation.";
+            _error = "Chỉ quản trị viên mới có thể xác nhận cuộc họp phòng 1 đang chờ xác nhận.";
             return;
         }
 
@@ -452,13 +453,13 @@
         var booking = await db.Bookings.FirstOrDefaultAsync(b => b.RoomBookingId == _selectedBooking.RoomBookingId);
         if (booking is null)
         {
-            _error = "Meeting not found.";
+            _error = "Không tìm thấy cuộc họp.";
             return;
         }
 
         if (booking.Room != Room1 || booking.State != Booking.ConfirmationWait)
         {
-            _error = "Meeting is not waiting for confirmation.";
+            _error = "Cuộc họp không đang chờ xác nhận.";
             return;
         }
 
@@ -500,15 +501,15 @@
 
         if (today < booking.Date || (today == booking.Date && currentTime < booking.StartTime))
         {
-            return "will take place";
+            return "sẽ diễn ra";
         }
 
         if (today == booking.Date && currentTime <= booking.EndTime)
         {
-            return "is taking place";
+            return "đang diễn ra";
         }
 
-        return "took place";
+        return "đã diễn ra";
     }
 
     private async Task GoToCurrentWeek()
@@ -519,12 +520,12 @@
 
     private static string StateText(int state) => state switch
     {
-        Booking.Booked => "Booked",
-        Booking.ConfirmationWait => "Waiting for confirmation",
-        Booking.Unused => "Unused",
-        Booking.ConfirmationRejected => "Rejected",
-        Booking.Cancelled => "Cancelled",
-        _ => $"Unknown ({state})"
+        Booking.Booked => "Đã đặt",
+        Booking.ConfirmationWait => "Chờ xác nhận",
+        Booking.Unused => "Không sử dụng",
+        Booking.ConfirmationRejected => "Đã từ chối",
+        Booking.Cancelled => "Đã hủy",
+        _ => $"Không xác định ({state})"
     };
 
     private sealed class MeetingEditorModel

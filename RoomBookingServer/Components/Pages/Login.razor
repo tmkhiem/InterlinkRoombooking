@@ -4,12 +4,12 @@
 @using Microsoft.AspNetCore.WebUtilities
 @inject NavigationManager Navigation
 
-<PageTitle>Login</PageTitle>
+<PageTitle>Đăng nhập</PageTitle>
 
 <div class="login-page">
     <div class="login-card">
-        <h1>Room Booking</h1>
-        <p>Login with your Attendance employee account.</p>
+        <h1>Đặt Phòng</h1>
+        <p>Đăng nhập bằng tài khoản nhân viên Attendance của bạn.</p>
 
         @if (!string.IsNullOrWhiteSpace(_error))
         {
@@ -17,13 +17,13 @@
         }
 
         <form method="post" action="/auth/login">
-            <label for="employeeId">Employee ID</label>
+            <label for="employeeId">Mã nhân viên</label>
             <input id="employeeId" name="employeeId" required maxlength="10" />
 
-            <label for="password">Password</label>
+            <label for="password">Mật khẩu</label>
             <input id="password" name="password" type="password" required />
 
-            <button type="submit">Login</button>
+            <button type="submit">Đăng nhập</button>
         </form>
     </div>
 </div>
@@ -41,9 +41,9 @@
 
         _error = errorCode.ToString() switch
         {
-            "invalid" => "Invalid employee ID or password.",
-            "missing" => "Please provide employee ID and password.",
-            _ => "Login failed."
+            "invalid" => "Mã nhân viên hoặc mật khẩu không đúng.",
+            "missing" => "Vui lòng nhập mã nhân viên và mật khẩu.",
+            _ => "Đăng nhập thất bại."
         };
     }
 }
