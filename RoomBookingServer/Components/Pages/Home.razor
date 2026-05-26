@@ -633,7 +633,7 @@
 		}
 
 		var documents = await db.BookingDocuments
-			.Where(d => d.RoomBookingId == booking.RoomBookingId)
+			.Where(d => d.RoomBookingId == booking.RoomBookingId && d.DeletedAtUtc == null)
 			.ToListAsync();
 		foreach (var document in documents)
 		{
