@@ -1,0 +1,53 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@layout Layout.MainLayout
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager Navigation
+
+<PageTitle>Đăng nhập</PageTitle>
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-logo-wrap">
+            <img class="login-logo" src="/header.svg" alt="Interlink Room Booking" />
+        </div>
+        <h1>Interlink Roombooking</h1>
+        <p>Đăng nhập bằng tài khoản chấm công (HR) của bạn.</p>
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <p class="login-error">@_error</p>
+        }
+
+        <form method="post" action="/auth/login">
+            <AntiforgeryToken />
+            <label for="employeeId">Mã nhân viên</label>
+            <input id="employeeId" name="employeeId" required maxlength="10" autocomplete="username" />
+
+            <label for="password">Mật khẩu</label>
+            <input id="password" name="password" type="password" required autocomplete="current-password" />
+
+            <button type="submit">Đăng nhập</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        var absoluteUri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (!QueryHelpers.ParseQuery(absoluteUri.Query).TryGetValue("error", out var errorCode))
+        {
+            return;
+        }
+
+        _error = errorCode.ToString() switch
+        {
+            "invalid" => "Mã nhân viên hoặc mật khẩu không đúng.",
+            "missing" => "Vui lòng nhập mã nhân viên và mật khẩu.",
+            _ => "Đăng nhập thất bại."
+        };
+    }
+}

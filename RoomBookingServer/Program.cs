@@ -1,4 +1,10 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 using RoomBookingServer.Components;
+using RoomBookingServer.Models.Db.Attendance;
+using RoomBookingServer.Models.Db.Roombooking;
 
 namespace RoomBookingServer
 {
@@ -8,29 +14,105 @@ namespace RoomBookingServer
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
 
+            builder.Services.AddCascadingAuthenticationState();
+            builder.Services.AddAuthorization();
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/login";
+                    options.AccessDeniedPath = "/login";
+                    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                    options.SlidingExpiration = true;
+                });
+
+            builder.Services.AddDbContextFactory<AttendanceContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("Attendance")));
+
+            builder.Services.AddDbContextFactory<RoombookingContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("Roombooking")));
+
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
-
             app.UseStaticFiles();
             app.UseAntiforgery();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.MapPost("/auth/login", async (HttpContext context,
+                IDbContextFactory<AttendanceContext> attendanceFactory,
+                IDbContextFactory<RoombookingContext> roomFactory) =>
+            {
+                var form = await context.Request.ReadFormAsync();
+                var employeeId = form["employeeId"].ToString().Trim();
+                var password = form["password"].ToString();
+
+                if (string.IsNullOrWhiteSpace(employeeId) || string.IsNullOrWhiteSpace(password))
+                {
+                    return Results.Redirect("/login?error=missing");
+                }
+
+                await using var attendanceDb = await attendanceFactory.CreateDbContextAsync();
+                var employee = await attendanceDb.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Id == employeeId && e.Password == password);
+
+                if (employee is null)
+                {
+                    return Results.Redirect("/login?error=invalid");
+                }
+
+                await using var roomDb = await roomFactory.CreateDbContextAsync();
+                var isAdmin = await IsEmployeeAdminAsync(roomDb, employee);
+
+                var claims = new List<Claim>
+                {
+                    new(ClaimTypes.NameIdentifier, employee.Id),
+                    new("employee_id", employee.Id),
+                    new(ClaimTypes.Name, employee.FullName)
+                };
+
+                if (!string.IsNullOrWhiteSpace(employee.Email))
+                {
+                    claims.Add(new Claim(ClaimTypes.Email, employee.Email));
+                }
+
+                if (isAdmin)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+                }
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+                return Results.Redirect("/");
+            });
+
+            app.MapGet("/auth/logout", async (HttpContext context) =>
+            {
+                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return Results.Redirect("/login");
+            });
 
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
 
             app.Run();
+        }
+
+        private static Task<bool> IsEmployeeAdminAsync(RoombookingContext db, Employee employee)
+        {
+            return db.Admins.AnyAsync(a => a.EmployeeId == employee.Id);
         }
     }
 }
