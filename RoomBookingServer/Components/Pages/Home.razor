@@ -100,9 +100,9 @@
 									<button type="button"
 											class="meeting-chip room-@booking.Room state-@booking.State"
 											style="@GetBookingStyle(booking)"
-											title="@GetMeetingQuickDetails(booking)"
 											@onclick="() => OpenBookingDetails(booking)">
-										@booking.Title
+										<span class="meeting-chip-label">@booking.Title</span>
+										<span class="meeting-chip-callout" role="tooltip">@GetMeetingQuickDetails(booking)</span>
 									</button>
 								}
 							</div>
