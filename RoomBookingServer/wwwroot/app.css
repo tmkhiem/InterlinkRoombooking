@@ -2,6 +2,34 @@ h1:focus {
     outline: none;
 }
 
+:root {
+    --color-brand-blue: #005c9a;
+    --color-brand-blue-dark: #003f72;
+    --color-accent-red: #e4161f;
+    --color-text-primary: #1e1b24;
+    --color-surface-white: #fff;
+    --color-surface-soft: #f7f7f7;
+    --color-surface-glass: rgba(255, 255, 255, 0.62);
+    --color-surface-glass-strong: rgba(255, 255, 255, 0.80);
+    --color-surface-border-soft: rgba(255, 255, 255, 0.55);
+    --color-surface-border-strong: rgba(255, 255, 255, 0.75);
+    --color-shadow-soft: rgba(0, 0, 0, .12);
+    --color-shadow-medium: rgba(0, 0, 0, .16);
+    --color-divider-light: #e8e8e8;
+    --color-divider-mid: #d7d7d7;
+    --color-input-border: #d0d0d0;
+    --color-text-secondary: #4b4b4b;
+    --color-text-muted: #28242f;
+    --color-login-backdrop: #0d1528;
+    --color-chip-room1-bg: #d9f0d8;
+    --color-chip-room1-border: #b1d1af;
+    --color-chip-room2-bg: #d7ecff;
+    --color-chip-room2-border: #93b2cd;
+    --color-chip-room3-bg: #ffe6bf;
+    --color-chip-room3-border: #d3ad70;
+    --color-chip-dashed-border: #5f5f5f;
+}
+
 html,
 body {
     height: 100%;
@@ -12,7 +40,7 @@ body {
     background-size: cover;
     background-attachment: fixed;
     background-position: center;
-    color: #1e1b24;
+    color: var(--color-text-primary);
 }
 
 .material-symbols-outlined {

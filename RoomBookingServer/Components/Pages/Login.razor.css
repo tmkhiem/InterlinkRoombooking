@@ -7,21 +7,33 @@
     justify-content: center;
     padding: 1rem;
     box-sizing: border-box;
-    background-color: #0d1528;
+    background-color: var(--color-login-backdrop);
     background-image: url("/marble-bg-login.jpg");
     background-size: cover;
     background-position: center;
 }
 
 .login-card {
-    background: rgba(255, 255, 255, 0.62);
+    background: var(--color-surface-glass);
     -webkit-backdrop-filter: blur(20px) saturate(200%);
     backdrop-filter: blur(20px) saturate(200%);
     width: min(420px, 100%);
     border-radius: .75rem;
     padding: 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--color-surface-border-soft);
     box-shadow: 0 .75rem 2.5rem rgba(0, 0, 0, .40), inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+.login-logo-wrap {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: .85rem;
+}
+
+.login-logo {
+    width: min(240px, 100%);
+    height: auto;
+    display: block;
 }
 
 .login-card h1 {
@@ -36,7 +48,7 @@
 
 .login-card input {
     padding: .55rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--color-input-border);
     border-radius: .35rem;
 }
 
@@ -44,13 +56,13 @@
     margin-top: .5rem;
     padding: .55rem;
     border-radius: .35rem;
-    border: 1px solid #005c9a;
-    background: #005c9a;
+    border: 1px solid var(--color-brand-blue);
+    background: var(--color-brand-blue);
     color: white;
     cursor: pointer;
 }
 
 .login-error {
-    color: #d71920;
+    color: var(--color-accent-red);
     font-weight: 600;
 }
