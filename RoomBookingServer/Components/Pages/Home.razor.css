@@ -388,8 +388,8 @@ button {
 .meeting-editor-form {
     display: grid;
     grid-template-columns: minmax(140px, 170px) minmax(0, 1fr);
-    column-gap: .85rem;
-    row-gap: .7rem;
+    column-gap: 1.5rem;
+    row-gap: 1rem;
     align-items: center;
 }
 
