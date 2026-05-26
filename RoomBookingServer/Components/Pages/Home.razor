@@ -86,8 +86,7 @@
                         }
 
                         <td class="schedule-lane" colspan="@Hours.Length">
-                            <div class="hour-grid">
-                                <span class="lane-label">R@room</span>
+                            <div class="hour-grid">                                
                                 @for (var hourIndex = 1; hourIndex < Hours.Length; hourIndex++)
                                 {
                                     <span class="hour-divider" style="@($"left: {(hourIndex * 100d / Hours.Length):F4}%")"></span>
