@@ -275,7 +275,14 @@
 									<li class="upload-status-item">
 										<span class="upload-file-name" title="@file.File.Name">@file.File.Name</span>
 										<span class="document-meta">(@FormatFileSize(file.Size))</span>
-										<progress class="upload-progress" max="100" value="@file.ProgressPercent"></progress>
+										@if (file.IsUploaded)
+										{
+											<progress class="upload-progress" max="100" value="100"></progress>
+										}
+										else
+										{
+											<progress class="upload-progress" max="100"></progress>
+										}
 										<span class="upload-status-text">@GetUploadStatusText(file)</span>
 										<label class="upload-success-check" title="Tải lên thành công">
 											<input type="checkbox" checked="@file.IsUploaded" disabled />
@@ -582,7 +589,7 @@
 
 			foreach (var pendingFile in _editorPendingFiles)
 			{
-				pendingFile.ProgressPercent = 10;
+				pendingFile.IsUploading = true;
 				pendingFile.IsUploaded = false;
 				await InvokeAsync(StateHasChanged);
 
@@ -593,7 +600,7 @@
 					pendingFile.File.ContentType,
 					_employeeId);
 				uploadedStoragePaths.Add(stored.StoragePath);
-				pendingFile.ProgressPercent = 100;
+				pendingFile.IsUploading = false;
 				pendingFile.IsUploaded = true;
 				await InvokeAsync(StateHasChanged);
 
@@ -625,6 +632,11 @@
 		}
 		finally
 		{
+			foreach (var pendingFile in _editorPendingFiles)
+			{
+				pendingFile.IsUploading = false;
+			}
+
 			_isSavingMeeting = false;
 			await InvokeAsync(StateHasChanged);
 		}
@@ -799,7 +811,7 @@
 
 	private static string GetUploadStatusText(PendingUploadFile file) => file.IsUploaded
 		? "Đã tải lên"
-		: file.ProgressPercent > 0 ? "Đang tải lên" : "Chờ tải lên";
+		: file.IsUploading ? "Đang tải lên" : "Chờ tải lên";
 
 	private bool CanDownloadDocuments(Booking booking) => CanEdit(booking);
 
@@ -899,7 +911,7 @@
 		public Guid Token { get; }
 		public IBrowserFile File { get; }
 		public long Size { get; }
-		public int ProgressPercent { get; set; }
+		public bool IsUploading { get; set; }
 		public bool IsUploaded { get; set; }
 	}
 
