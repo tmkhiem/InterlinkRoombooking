@@ -4,11 +4,14 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.Extensions.Options
 @using RoomBookingServer.Models.Db.Roombooking
+@using RoomBookingServer.Options
 @using RoomBookingServer.Services
 @inject IDbContextFactory<RoombookingContext> RoomDbFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IBookingDocumentStorage DocumentStorage
+@inject IOptions<DocumentUploadOptions> UploadOptions
 
 <PageTitle>Đặt Phòng</PageTitle>
 
@@ -343,8 +346,8 @@
 	private const int Room1 = 1;
 	private const int Room2 = 2;
 	private const int Room3 = 3;
-	private const long MaxUploadFileSizeBytes = 25L * 1024 * 1024;
-	private const int MaxUploadFileCount = 10;
+	private long MaxUploadFileSizeBytes => UploadOptions.Value.MaxFileSizeBytes;
+	private int MaxUploadFileCount => UploadOptions.Value.MaxFileCount;
 	private static readonly int[] Rooms = [Room1, Room2, Room3];
 	private const int CalendarStartHour = 7;
 	private const int CalendarHourCount = 14;

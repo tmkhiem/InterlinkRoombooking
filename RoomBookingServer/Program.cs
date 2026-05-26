@@ -2,9 +2,11 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using RoomBookingServer.Components;
 using RoomBookingServer.Models.Db.Attendance;
 using RoomBookingServer.Models.Db.Roombooking;
+using RoomBookingServer.Options;
 using RoomBookingServer.Services;
 
 namespace RoomBookingServer
@@ -36,6 +38,8 @@ namespace RoomBookingServer
                 options.UseSqlServer(builder.Configuration.GetConnectionString("Roombooking")));
             builder.Services.AddScoped<IBookingDocumentStorage, BookingDocumentStorage>();
             builder.Services.AddHostedService<BookingDocumentCleanupHostedService>();
+            builder.Services.Configure<DocumentUploadOptions>(
+                builder.Configuration.GetSection(DocumentUploadOptions.SectionName));
 
             var app = builder.Build();
 
@@ -194,10 +198,11 @@ namespace RoomBookingServer
                 int bookingId,
                 IDbContextFactory<RoombookingContext> roomFactory,
                 IBookingDocumentStorage documentStorage,
+                IOptions<DocumentUploadOptions> uploadOptions,
                 CancellationToken cancellationToken) =>
             {
-                const long MaxFileSizeBytes = 25L * 1024 * 1024;
-                const int MaxFilesPerRequest = 10;
+                var maxFileSizeBytes = uploadOptions.Value.MaxFileSizeBytes;
+                var maxFilesPerRequest = uploadOptions.Value.MaxFileCount;
 
                 var employeeId = context.User.FindFirstValue("employee_id")
                                  ?? context.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -234,9 +239,9 @@ namespace RoomBookingServer
                     return Results.BadRequest("Vui lòng chọn ít nhất một tập tin.");
                 }
 
-                if (form.Files.Count > MaxFilesPerRequest)
+                if (form.Files.Count > maxFilesPerRequest)
                 {
-                    return Results.BadRequest($"Chỉ được tải tối đa {MaxFilesPerRequest} tập tin mỗi lần.");
+                    return Results.BadRequest($"Chỉ được tải tối đa {maxFilesPerRequest} tập tin mỗi lần.");
                 }
 
                 var uploadedDocuments = new List<object>();
@@ -251,7 +256,7 @@ namespace RoomBookingServer
                             continue;
                         }
 
-                        if (file.Length > MaxFileSizeBytes)
+                        if (file.Length > maxFileSizeBytes)
                         {
                             var safeFileName = Path.GetFileName(file.FileName);
                             if (string.IsNullOrWhiteSpace(safeFileName))
@@ -264,7 +269,7 @@ namespace RoomBookingServer
                                 safeFileName = safeFileName[..100];
                             }
 
-                            return Results.BadRequest($"Tập tin '{safeFileName}' vượt quá giới hạn {MaxFileSizeBytes / 1024 / 1024} MB.");
+                            return Results.BadRequest($"Tập tin '{safeFileName}' vượt quá giới hạn {maxFileSizeBytes / 1024 / 1024} MB.");
                         }
 
                         await using var fileStream = file.OpenReadStream();
