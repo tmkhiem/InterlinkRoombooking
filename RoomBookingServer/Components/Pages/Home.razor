@@ -242,63 +242,90 @@
 				<div class="meeting-editor-documents">
 					<label for="meeting-documents">Tài liệu đính kèm</label>
 					<div class="document-editor-panel">
+						<InputFile id="meeting-documents" class="document-file-input" style="display:none !important;" hidden tabindex="-1" aria-hidden="true" OnChange="OnEditorFilesChanged" multiple disabled="@_isSavingMeeting" />
 						<div class="document-dropzone"
 							data-input-id="meeting-documents"
-							onclick="window.roomBookingDropzone?.openPicker(event)"
 							ondragover="window.roomBookingDropzone?.dragOver(event)"
 							ondrop="window.roomBookingDropzone?.dropFiles(event)">
-							<InputFile id="meeting-documents" class="document-file-input" OnChange="OnEditorFilesChanged" multiple disabled="@_isSavingMeeting" />
-							<p class="document-dropzone-title">Kéo thả tập tin vào đây hoặc nhấn để chọn</p>
-							<p class="document-dropzone-subtitle">Tối đa @MaxUploadFileCount tập tin, mỗi tập tin @((MaxUploadFileSizeBytes / 1024 / 1024).ToString()) MB</p>
+							<div class="document-dropzone-header">
+								<p class="document-dropzone-title">Kéo thả tập tin vào đây</p>
+								<p class="document-dropzone-subtitle">Tối đa @MaxUploadFileCount tập tin, mỗi tập tin @((MaxUploadFileSizeBytes / 1024 / 1024).ToString()) MB</p>
+								<button type="button"
+									class="icon-button document-dropzone-button"
+									data-input-id="meeting-documents"
+									onclick="window.roomBookingDropzone?.openPicker(event)"
+									disabled="@_isSavingMeeting">
+									<span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
+									<span>Chọn tập tin</span>
+								</button>
+							</div>
+
+							<div class="document-dropzone-content">
+								@if (_editorExistingDocuments.Count == 0 && _editorPendingFiles.Count == 0)
+								{
+									<p class="document-dropzone-empty">Chưa có tài liệu nào được thêm.</p>
+								}
+
+								@if (_editorExistingDocuments.Count > 0)
+								{
+									<div class="document-file-section">
+										<p class="editor-documents-label">Tài liệu hiện có</p>
+										<ul class="document-list">
+											@foreach (var document in _editorExistingDocuments)
+											{
+												<li class="document-file-row">
+													<span class="material-symbols-outlined document-file-icon" aria-hidden="true">description</span>
+													<div class="document-file-details">
+														<a class="document-file-name" href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
+															@document.OriginalFileName
+														</a>
+														<span class="document-file-meta">@FormatFileSize(document.FileSizeBytes)</span>
+													</div>
+													<button type="button" class="danger icon-button mini-icon-button document-row-action" aria-label="Xóa tập tin" @onclick="() => RemoveExistingDocument(document.BookingDocumentId)">
+														<span class="material-symbols-outlined" aria-hidden="true">close</span>
+													</button>
+												</li>
+											}
+										</ul>
+									</div>
+								}
+
+								@if (_editorPendingFiles.Count > 0)
+								{
+									<div class="document-file-section">
+										<p class="editor-documents-label">Tập tin sẽ tải lên</p>
+										<ul class="document-list upload-status-list">
+											@foreach (var file in _editorPendingFiles)
+											{
+												<li class="document-file-row upload-status-item">
+													<span class="material-symbols-outlined document-file-icon" aria-hidden="true">description</span>
+													<div class="document-file-details">
+														<span class="document-file-name" title="@file.File.Name">@file.File.Name</span>
+														<div class="upload-file-status-row">
+															@if (file.IsUploaded)
+															{
+																<progress class="upload-progress" max="100" value="100"></progress>
+															}
+															else
+															{
+																<progress class="upload-progress" max="100"></progress>
+															}
+															<div class="upload-file-meta-row">
+																<span class="document-file-meta">@FormatFileSize(file.Size)</span>
+																<span class="upload-status-text">@GetUploadStatusText(file)</span>
+															</div>
+														</div>
+													</div>
+													<button type="button" class="danger icon-button mini-icon-button document-row-action" aria-label="Xóa tập tin đang tải lên" disabled="@(_isSavingMeeting || file.IsUploaded)" @onclick="() => RemovePendingFile(file.Token)">
+														<span class="material-symbols-outlined" aria-hidden="true">close</span>
+													</button>
+												</li>
+											}
+										</ul>
+									</div>
+								}
+							</div>
 						</div>
-						@if (_editorExistingDocuments.Count > 0)
-						{
-							<p class="editor-documents-label">Tài liệu hiện có:</p>
-							<ul class="document-list">
-								@foreach (var document in _editorExistingDocuments)
-								{
-									<li>
-										<a href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
-											@document.OriginalFileName
-										</a>
-										<span class="document-meta">(@FormatFileSize(document.FileSizeBytes))</span>
-										<button type="button" class="danger icon-button mini-icon-button" @onclick="() => RemoveExistingDocument(document.BookingDocumentId)">
-											<span class="material-symbols-outlined" aria-hidden="true">delete</span>
-											<span>Xóa</span>
-										</button>
-									</li>
-								}
-							</ul>
-						}
-						@if (_editorPendingFiles.Count > 0)
-						{
-							<p class="editor-documents-label">Tập tin sẽ tải lên:</p>
-							<ul class="document-list upload-status-list">
-								@foreach (var file in _editorPendingFiles)
-								{
-									<li class="upload-status-item">
-										<span class="upload-file-name" title="@file.File.Name">@file.File.Name</span>
-										<span class="document-meta">(@FormatFileSize(file.Size))</span>
-										@if (file.IsUploaded)
-										{
-											<progress class="upload-progress" max="100" value="100"></progress>
-										}
-										else
-										{
-											<progress class="upload-progress" max="100"></progress>
-										}
-										<span class="upload-status-text">@GetUploadStatusText(file)</span>
-										<label class="upload-success-check" title="Tải lên thành công">
-											<input type="checkbox" checked="@file.IsUploaded" disabled />
-										</label>
-										<button type="button" class="danger icon-button mini-icon-button" disabled="@(_isSavingMeeting || file.IsUploaded)" @onclick="() => RemovePendingFile(file.Token)">
-											<span class="material-symbols-outlined" aria-hidden="true">close</span>
-											<span>Bỏ</span>
-										</button>
-									</li>
-								}
-							</ul>
-						}
 					</div>
 				</div>
 			</div>

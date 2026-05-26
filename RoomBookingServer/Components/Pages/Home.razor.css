@@ -449,6 +449,7 @@ button {
     min-height: 0;
     display: flex;
     flex-direction: column;
+    height: 100%;
     gap: .45rem;
 }
 
@@ -530,28 +531,33 @@ button {
     flex-direction: column;
     align-items: stretch;
     flex: 1 1 auto;
-    gap: .5rem;
     min-height: 0;
     height: 100%;
-    overflow-y: auto;
-    padding-right: .2rem;
+    overflow: hidden;
 }
 
 .document-dropzone {
-    position: relative;
     border: 1.5px dashed var(--color-divider-mid);
     border-radius: .8rem;
     background: var(--color-surface-soft);
     padding: .9rem;
-    min-height: 6.5rem;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: .3rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: .85rem;
 }
 
 .document-file-input {
     display: none;
+}
+
+.document-dropzone-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .4rem;
+    padding: .25rem 0 .1rem;
 }
 
 .document-dropzone-title,
@@ -569,6 +575,33 @@ button {
     font-size: .85rem;
 }
 
+.document-dropzone-button {
+    margin-top: .2rem;
+}
+
+.document-dropzone-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    overflow-y: auto;
+    padding-right: .2rem;
+}
+
+.document-dropzone-empty {
+    margin: auto 0;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: .92rem;
+}
+
+.document-file-section {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+}
+
 .editor-documents-label {
     margin: 0;
     font-size: .9rem;
@@ -577,63 +610,88 @@ button {
 
 .document-list {
     margin: 0;
-    padding-left: 1.15rem;
-}
-
-    .document-list li {
-        display: flex;
-        align-items: center;
-        gap: .45rem;
-        margin-bottom: .25rem;
-        flex-wrap: wrap;
-    }
-
-.upload-status-list {
-    padding-left: 0;
+    padding: 0;
     list-style: none;
 }
 
-    .upload-status-list .upload-status-item {
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-        gap: .4rem;
-        margin-bottom: .35rem;
-    }
+.document-file-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .65rem;
+    padding: .65rem .75rem;
+    border-radius: .75rem;
+    background: rgba(255, 255, 255, .7);
+    margin-bottom: .45rem;
+}
 
-.upload-file-name {
+.document-file-icon {
+    color: var(--color-brand-blue);
+    font-size: 1.35rem;
+    line-height: 1.35rem;
+    margin-top: .1rem;
+}
+
+.document-file-details {
     flex: 1 1 auto;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .28rem;
+}
+
+.document-file-name {
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.document-file-name:hover {
+    text-decoration: underline;
+}
+
+.document-file-meta,
+.document-meta {
+    color: var(--color-text-muted);
+    font-size: .85rem;
+}
+
+.document-row-action {
+    flex: 0 0 auto;
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: .22rem;
+}
+
+.upload-status-item {
+    align-items: center;
+}
+
+.upload-file-status-row {
+    display: flex;
+    flex-direction: column;
+    gap: .28rem;
+}
+
+.upload-file-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .65rem;
+    min-width: 0;
 }
 
 .upload-progress {
-    width: 130px;
+    width: 100%;
     height: .65rem;
 }
 
 .upload-status-text {
-    width: 5.9rem;
     font-size: .82rem;
     color: var(--color-text-muted);
-    white-space: nowrap;
-}
-
-.upload-success-check {
-    display: inline-flex;
-    align-items: center;
-}
-
-    .upload-success-check input {
-        width: 1rem;
-        height: 1rem;
-        margin: 0;
-    }
-
-.document-meta {
-    color: var(--color-text-muted);
-    font-size: .85rem;
     white-space: nowrap;
 }
 
@@ -668,5 +726,19 @@ button {
         padding: 1.2rem;
     }
 
-    .document-editor-panel { height: auto; }
+    .meeting-editor-documents {
+        height: auto;
+    }
+
+    .document-editor-panel {
+        height: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .upload-file-meta-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .15rem;
+    }
 }
