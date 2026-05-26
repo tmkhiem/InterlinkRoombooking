@@ -503,6 +503,42 @@ button {
     text-align: right;
 }
 
+.document-editor-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+}
+
+.editor-documents-label {
+    margin: 0;
+    font-size: .9rem;
+    color: var(--color-text-muted);
+}
+
+.document-list {
+    margin: 0;
+    padding-left: 1.15rem;
+}
+
+    .document-list li {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        margin-bottom: .25rem;
+        flex-wrap: wrap;
+    }
+
+.document-meta {
+    color: var(--color-text-muted);
+    font-size: .85rem;
+}
+
+.mini-icon-button {
+    padding: .22rem .5rem;
+    font-size: .8rem;
+}
+
 .modal-card input,
 .modal-card select,
 .modal-card textarea {

@@ -2,10 +2,13 @@
 @attribute [Authorize]
 @using System.Globalization
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @using RoomBookingServer.Models.Db.Roombooking
+@using RoomBookingServer.Services
 @inject IDbContextFactory<RoombookingContext> RoomDbFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IBookingDocumentStorage DocumentStorage
 
 <PageTitle>Đặt Phòng</PageTitle>
 
@@ -100,7 +103,7 @@
 									<button type="button"
 											class="meeting-chip room-@booking.Room state-@booking.State"
 											style="@GetBookingStyle(booking)"
-											@onclick="() => OpenBookingDetails(booking)">
+											@onclick="() => OpenBookingDetailsAsync(booking)">
 										<span class="meeting-chip-label">@booking.Title</span>
 										<span class="meeting-chip-callout">@GetMeetingQuickDetails(booking)</span>
 									</button>
@@ -156,11 +159,30 @@
 			{
 				<p class="details-note-title"><strong>Không có ghi chú.</strong></p>
 			}
+			@if (_selectedDocuments.Count > 0)
+			{
+				<p class="details-note-title"><strong>Tài liệu đính kèm:</strong></p>
+				<ul class="document-list">
+					@foreach (var document in _selectedDocuments)
+					{
+						<li>
+							<a href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
+								@document.OriginalFileName
+							</a>
+							<span class="document-meta">(@FormatFileSize(document.FileSizeBytes))</span>
+						</li>
+					}
+				</ul>
+			}
+			else
+			{
+				<p class="details-note-title"><strong>Không có tài liệu đính kèm.</strong></p>
+			}
 
 			<div class="modal-actions">
 				@if (CanEdit(_selectedBooking))
 				{
-					<button class="icon-button" @onclick="OpenEditMeeting"><span class="material-symbols-outlined" aria-hidden="true">edit</span><span>Sửa</span></button>
+					<button class="icon-button" @onclick="OpenEditMeetingAsync"><span class="material-symbols-outlined" aria-hidden="true">edit</span><span>Sửa</span></button>
 				}
 				@if (CanDelete(_selectedBooking))
 				{
@@ -206,6 +228,47 @@
 
 				<label for="meeting-note">Ghi chú</label>
 				<textarea id="meeting-note" rows="3" @bind="_editor.Note"></textarea>
+
+				<label for="meeting-documents">Tài liệu đính kèm</label>
+				<div class="document-editor-panel">
+					<InputFile id="meeting-documents" OnChange="OnEditorFilesChanged" multiple />
+					@if (_editorExistingDocuments.Count > 0)
+					{
+						<p class="editor-documents-label">Tài liệu hiện có:</p>
+						<ul class="document-list">
+							@foreach (var document in _editorExistingDocuments)
+							{
+								<li>
+									<a href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
+										@document.OriginalFileName
+									</a>
+									<span class="document-meta">(@FormatFileSize(document.FileSizeBytes))</span>
+									<button type="button" class="danger icon-button mini-icon-button" @onclick="() => RemoveExistingDocument(document.BookingDocumentId)">
+										<span class="material-symbols-outlined" aria-hidden="true">delete</span>
+										<span>Xóa</span>
+									</button>
+								</li>
+							}
+						</ul>
+					}
+					@if (_editorPendingFiles.Count > 0)
+					{
+						<p class="editor-documents-label">Tập tin sẽ tải lên:</p>
+						<ul class="document-list">
+							@foreach (var file in _editorPendingFiles)
+							{
+								<li>
+									<span>@file.FileName</span>
+									<span class="document-meta">(@FormatFileSize(file.Size))</span>
+									<button type="button" class="danger icon-button mini-icon-button" @onclick="() => RemovePendingFile(file.Token)">
+										<span class="material-symbols-outlined" aria-hidden="true">close</span>
+										<span>Bỏ</span>
+									</button>
+								</li>
+							}
+						</ul>
+					}
+				</div>
 			</div>
 
 			<div class="modal-actions">
@@ -220,6 +283,8 @@
 	private const int Room1 = 1;
 	private const int Room2 = 2;
 	private const int Room3 = 3;
+	private const long MaxUploadFileSizeBytes = 25L * 1024 * 1024;
+	private const int MaxUploadFileCount = 10;
 	private static readonly int[] Rooms = [Room1, Room2, Room3];
 	private const int CalendarStartHour = 7;
 	private const int CalendarHourCount = 14;
@@ -243,6 +308,10 @@
 	private bool _showDetails;
 	private bool _showEditor;
 	private MeetingEditorModel _editor = new();
+	private List<BookingDocumentViewModel> _selectedDocuments = [];
+	private List<BookingDocumentViewModel> _editorExistingDocuments = [];
+	private readonly HashSet<long> _documentsMarkedForDeletion = [];
+	private readonly List<PendingUploadFile> _editorPendingFiles = [];
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -293,10 +362,11 @@
 		_ => "day-row day-row-bottom"
 	};
 
-	private void OpenBookingDetails(Booking booking)
+	private async Task OpenBookingDetailsAsync(Booking booking)
 	{
 		_error = null;
 		_selectedBooking = booking;
+		_selectedDocuments = await LoadDocumentsForBookingAsync(booking.RoomBookingId);
 		_showDetails = true;
 	}
 
@@ -346,10 +416,13 @@
 	{
 		_error = null;
 		_editor = MeetingEditorModel.CreateNew(_weekStart);
+		_editorExistingDocuments = [];
+		_documentsMarkedForDeletion.Clear();
+		_editorPendingFiles.Clear();
 		_showEditor = true;
 	}
 
-	private void OpenEditMeeting()
+	private async Task OpenEditMeetingAsync()
 	{
 		if (_selectedBooking is null || !CanEdit(_selectedBooking))
 		{
@@ -358,6 +431,9 @@
 
 		_error = null;
 		_editor = MeetingEditorModel.FromBooking(_selectedBooking);
+		_editorExistingDocuments = await LoadDocumentsForBookingAsync(_selectedBooking.RoomBookingId);
+		_documentsMarkedForDeletion.Clear();
+		_editorPendingFiles.Clear();
 		_showDetails = false;
 		_showEditor = true;
 	}
@@ -393,6 +469,18 @@
 		if (_editor.Room is < Room1 or > Room3)
 		{
 			_error = "Phòng không hợp lệ.";
+			return;
+		}
+
+		if (_editorPendingFiles.Count > MaxUploadFileCount)
+		{
+			_error = $"Chỉ được tải tối đa {MaxUploadFileCount} tập tin.";
+			return;
+		}
+
+		if (_editorPendingFiles.Any(f => f.Size > MaxUploadFileSizeBytes))
+		{
+			_error = $"Mỗi tập tin chỉ được tối đa {MaxUploadFileSizeBytes / 1024 / 1024} MB.";
 			return;
 		}
 
@@ -445,9 +533,65 @@
 		booking.Note = string.IsNullOrWhiteSpace(_editor.Note) ? null : _editor.Note.Trim();
 		booking.State = booking.Room == Room1 ? Booking.ConfirmationWait : Booking.Booked;
 
-		await db.SaveChangesAsync();
+		var uploadedStoragePaths = new List<string>();
+		try
+		{
+			await db.SaveChangesAsync();
+
+			if (_documentsMarkedForDeletion.Count > 0)
+			{
+				var removableDocuments = await db.BookingDocuments
+					.Where(d => d.RoomBookingId == booking.RoomBookingId && _documentsMarkedForDeletion.Contains(d.BookingDocumentId))
+					.ToListAsync();
+				foreach (var document in removableDocuments)
+				{
+					await DocumentStorage.DeleteAsync(document.StoragePath);
+				}
+
+				db.BookingDocuments.RemoveRange(removableDocuments);
+			}
+
+			foreach (var pendingFile in _editorPendingFiles)
+			{
+				await using var stream = pendingFile.File.OpenReadStream(MaxUploadFileSizeBytes);
+				var stored = await DocumentStorage.SaveAsync(
+					stream,
+					pendingFile.FileName,
+					pendingFile.File.ContentType,
+					_employeeId);
+				uploadedStoragePaths.Add(stored.StoragePath);
+
+				db.BookingDocuments.Add(new BookingDocument
+				{
+					RoomBookingId = booking.RoomBookingId,
+					UploadedBy = _employeeId,
+					OriginalFileName = stored.OriginalFileName,
+					StoredFileName = stored.StoredFileName,
+					StoragePath = stored.StoragePath,
+					ContentType = stored.ContentType,
+					FileSizeBytes = stored.FileSizeBytes,
+					UploadedAtUtc = stored.UploadedAtUtc,
+					ExpiresAtUtc = stored.ExpiresAtUtc
+				});
+			}
+
+			await db.SaveChangesAsync();
+		}
+		catch
+		{
+			foreach (var storagePath in uploadedStoragePaths)
+			{
+				await DocumentStorage.DeleteAsync(storagePath);
+			}
+
+			_error = "Không thể lưu tập tin đính kèm.";
+			return;
+		}
 
 		_showEditor = false;
+		_documentsMarkedForDeletion.Clear();
+		_editorPendingFiles.Clear();
+		_editorExistingDocuments = [];
 		await LoadWeekAsync();
 	}
 
@@ -467,11 +611,21 @@
 			return;
 		}
 
+		var documents = await db.BookingDocuments
+			.Where(d => d.RoomBookingId == booking.RoomBookingId)
+			.ToListAsync();
+		foreach (var document in documents)
+		{
+			await DocumentStorage.DeleteAsync(document.StoragePath);
+		}
+
+		db.BookingDocuments.RemoveRange(documents);
 		db.Bookings.Remove(booking);
 		await db.SaveChangesAsync();
 
 		_showDetails = false;
 		_selectedBooking = null;
+		_selectedDocuments = [];
 		await LoadWeekAsync();
 	}
 
@@ -505,15 +659,97 @@
 		await LoadWeekAsync();
 	}
 
+	private async Task<List<BookingDocumentViewModel>> LoadDocumentsForBookingAsync(int bookingId)
+	{
+		await using var db = await RoomDbFactory.CreateDbContextAsync();
+		return await db.BookingDocuments
+			.AsNoTracking()
+			.Where(d => d.RoomBookingId == bookingId && d.DeletedAtUtc == null)
+			.OrderBy(d => d.UploadedAtUtc)
+			.Select(d => new BookingDocumentViewModel(
+				d.BookingDocumentId,
+				d.RoomBookingId,
+				d.OriginalFileName,
+				d.FileSizeBytes))
+			.ToListAsync();
+	}
+
+	private async Task OnEditorFilesChanged(InputFileChangeEventArgs eventArgs)
+	{
+		if (_editorPendingFiles.Count + eventArgs.FileCount > MaxUploadFileCount)
+		{
+			_error = $"Chỉ được tải tối đa {MaxUploadFileCount} tập tin.";
+			return;
+		}
+
+		foreach (var file in eventArgs.GetMultipleFiles(MaxUploadFileCount))
+		{
+			if (file.Size <= 0)
+			{
+				continue;
+			}
+
+			if (file.Size > MaxUploadFileSizeBytes)
+			{
+				_error = $"Tập tin '{file.Name}' vượt quá giới hạn {MaxUploadFileSizeBytes / 1024 / 1024} MB.";
+				continue;
+			}
+
+			_editorPendingFiles.Add(new PendingUploadFile(Guid.NewGuid(), file, file.Name, file.Size));
+		}
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private void RemoveExistingDocument(long bookingDocumentId)
+	{
+		_documentsMarkedForDeletion.Add(bookingDocumentId);
+		_editorExistingDocuments.RemoveAll(d => d.BookingDocumentId == bookingDocumentId);
+	}
+
+	private void RemovePendingFile(Guid token)
+	{
+		_editorPendingFiles.RemoveAll(file => file.Token == token);
+	}
+
+	private static string FormatFileSize(long sizeBytes)
+	{
+		const double kilobyte = 1024d;
+		const double megabyte = kilobyte * 1024d;
+		if (sizeBytes < kilobyte)
+		{
+			return $"{sizeBytes} B";
+		}
+
+		if (sizeBytes < megabyte)
+		{
+			return $"{sizeBytes / kilobyte:F1} KB";
+		}
+
+		return $"{sizeBytes / megabyte:F1} MB";
+	}
+
+	private static string GetDocumentDownloadUrl(int bookingId, long documentId)
+		=> $"/api/bookings/{bookingId}/documents/{documentId}";
+
 	private bool CanEdit(Booking booking) => string.Equals(booking.Creator, _employeeId, StringComparison.OrdinalIgnoreCase);
 
 	private bool CanDelete(Booking booking) => CanEdit(booking) || _isAdmin;
 
 	private bool CanConfirm(Booking booking) => _isAdmin && booking.Room == Room1 && booking.State == Booking.ConfirmationWait;
 
-	private void CloseDetails() => _showDetails = false;
+	private void CloseDetails()
+	{
+		_showDetails = false;
+		_selectedDocuments = [];
+	}
 
-	private void CloseEditor() => _showEditor = false;
+	private void CloseEditor()
+	{
+		_showEditor = false;
+		_documentsMarkedForDeletion.Clear();
+		_editorPendingFiles.Clear();
+	}
 
 	private async Task PreviousWeek()
 	{
@@ -573,6 +809,18 @@
 		var creatorText = string.IsNullOrWhiteSpace(creatorDisplay) ? "không rõ người đặt" : $"do {creatorDisplay} đặt";
 		return $"{booking.Title} (phòng R{booking.Room}, {creatorText}) - {booking.StartTime:HH:mm} - {booking.EndTime:HH:mm}";
 	}
+
+	private sealed record BookingDocumentViewModel(
+		long BookingDocumentId,
+		int RoomBookingId,
+		string OriginalFileName,
+		long FileSizeBytes);
+
+	private sealed record PendingUploadFile(
+		Guid Token,
+		IBrowserFile File,
+		string FileName,
+		long Size);
 
 	private sealed class MeetingEditorModel
 	{
