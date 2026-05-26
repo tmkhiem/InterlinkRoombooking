@@ -242,8 +242,12 @@
 				<div class="meeting-editor-documents">
 					<label for="meeting-documents">Tài liệu đính kèm</label>
 					<div class="document-editor-panel">
-						<div class="document-dropzone" @ondragover:preventDefault @ondrop:preventDefault>
-							<InputFile id="meeting-documents" class="document-dropzone-input" OnChange="OnEditorFilesChanged" multiple disabled="@_isSavingMeeting" />
+						<div class="document-dropzone"
+							data-input-id="meeting-documents"
+							onclick="window.roomBookingDropzone?.openPicker(event)"
+							ondragover="window.roomBookingDropzone?.dragOver(event)"
+							ondrop="window.roomBookingDropzone?.dropFiles(event)">
+							<InputFile id="meeting-documents" class="document-file-input" OnChange="OnEditorFilesChanged" multiple disabled="@_isSavingMeeting" />
 							<p class="document-dropzone-title">Kéo thả tập tin vào đây hoặc nhấn để chọn</p>
 							<p class="document-dropzone-subtitle">Tối đa @MaxUploadFileCount tập tin, mỗi tập tin @((MaxUploadFileSizeBytes / 1024 / 1024).ToString()) MB</p>
 						</div>
