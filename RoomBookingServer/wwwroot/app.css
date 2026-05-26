@@ -6,6 +6,10 @@ h1:focus {
     --color-brand-blue: #005c9a;
     --color-brand-blue-dark: #003f72;
     --color-accent-red: #e4161f;
+    --color-accent-red-shadow-strong: rgba(228, 22, 31, .32);
+    --color-accent-red-shadow-soft: rgba(228, 22, 31, .2);
+    --color-accent-red-glow: rgba(228, 22, 31, .26);
+    --color-transparent: rgba(255, 255, 255, 0);
     --color-text-primary: #1e1b24;
     --color-surface-white: #fff;
     --color-surface-soft: #f7f7f7;

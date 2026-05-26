@@ -281,7 +281,7 @@ button {
     background: var(--color-accent-red);
     z-index: 5;
     pointer-events: none;
-    box-shadow: -6px 0 8px rgba(228, 22, 31, .32), -18px 0 18px rgba(228, 22, 31, .2);
+    box-shadow: -6px 0 8px var(--color-accent-red-shadow-strong), -18px 0 18px var(--color-accent-red-shadow-soft);
 }
 
     .current-time-marker::before {
@@ -291,7 +291,7 @@ button {
         bottom: 0;
         right: 100%;
         width: 64px;
-        background: linear-gradient(to left, rgba(228, 22, 31, .26), rgba(228, 22, 31, 0));
+        background: linear-gradient(to left, var(--color-accent-red-glow), var(--color-transparent));
     }
 
 .lane-label {
