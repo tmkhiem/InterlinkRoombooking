@@ -96,7 +96,7 @@ namespace RoomBookingServer
 
                 await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
                 return Results.Redirect("/");
-            }).DisableAntiforgery();
+            });
 
             app.MapGet("/auth/logout", async (HttpContext context) =>
             {

@@ -17,6 +17,7 @@
         }
 
         <form method="post" action="/auth/login">
+            <AntiforgeryToken />
             <label for="employeeId">Mã nhân viên</label>
             <input id="employeeId" name="employeeId" required maxlength="10" autocomplete="username" />
 
