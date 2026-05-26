@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -64,9 +62,11 @@ namespace RoomBookingServer
                 }
 
                 await using var attendanceDb = await attendanceFactory.CreateDbContextAsync();
-                var employee = await attendanceDb.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
+                var employee = await attendanceDb.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Id == employeeId && e.Password == password);
 
-                if (employee is null || !PasswordMatches(employee.Password, password))
+                if (employee is null)
                 {
                     return Results.Redirect("/login?error=invalid");
                 }
@@ -108,13 +108,6 @@ namespace RoomBookingServer
                 .AddInteractiveServerRenderMode();
 
             app.Run();
-        }
-
-        private static bool PasswordMatches(string storedPassword, string incomingPassword)
-        {
-            var storedBytes = Encoding.UTF8.GetBytes(storedPassword);
-            var incomingBytes = Encoding.UTF8.GetBytes(incomingPassword);
-            return CryptographicOperations.FixedTimeEquals(storedBytes, incomingBytes);
         }
 
         private static Task<bool> IsEmployeeAdminAsync(RoombookingContext db, Employee employee)
