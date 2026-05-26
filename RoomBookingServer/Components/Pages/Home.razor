@@ -713,7 +713,18 @@
 		var oversizedFile = selectedFiles.FirstOrDefault(file => file.Size > MaxUploadFileSizeBytes);
 		if (oversizedFile is not null)
 		{
-			_error = $"Tập tin '{oversizedFile.Name}' vượt quá giới hạn {MaxUploadFileSizeBytes / 1024 / 1024} MB.";
+			var safeFileName = Path.GetFileName(oversizedFile.Name);
+			if (string.IsNullOrWhiteSpace(safeFileName))
+			{
+				safeFileName = "tập tin";
+			}
+
+			if (safeFileName.Length > 100)
+			{
+				safeFileName = safeFileName[..100];
+			}
+
+			_error = $"Tập tin '{safeFileName}' vượt quá giới hạn {MaxUploadFileSizeBytes / 1024 / 1024} MB.";
 			return;
 		}
 

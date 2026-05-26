@@ -253,7 +253,18 @@ namespace RoomBookingServer
 
                         if (file.Length > MaxFileSizeBytes)
                         {
-                            return Results.BadRequest($"Tập tin '{file.FileName}' vượt quá giới hạn {MaxFileSizeBytes / 1024 / 1024} MB.");
+                            var safeFileName = Path.GetFileName(file.FileName);
+                            if (string.IsNullOrWhiteSpace(safeFileName))
+                            {
+                                safeFileName = "tập tin";
+                            }
+
+                            if (safeFileName.Length > 100)
+                            {
+                                safeFileName = safeFileName[..100];
+                            }
+
+                            return Results.BadRequest($"Tập tin '{safeFileName}' vượt quá giới hạn {MaxFileSizeBytes / 1024 / 1024} MB.");
                         }
 
                         await using var fileStream = file.OpenReadStream();
