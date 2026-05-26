@@ -374,6 +374,29 @@ button {
     gap: .45rem;
 }
 
+.meeting-editor-card {
+    width: min(680px, calc(100vw - 2rem));
+    padding: 1.4rem 1.7rem;
+    gap: .85rem;
+}
+
+.editor-current-user {
+    margin: 0;
+    color: var(--color-text-muted);
+}
+
+.meeting-editor-form {
+    display: grid;
+    grid-template-columns: minmax(140px, 170px) minmax(0, 1fr);
+    column-gap: .85rem;
+    row-gap: .7rem;
+    align-items: center;
+}
+
+.required-mark {
+    color: var(--color-accent-red);
+}
+
 .details-spacer {
     height: 2rem;
 }
@@ -437,6 +460,10 @@ button {
 .modal-card label {
     font-weight: 600;
     color: var(--color-text-primary);
+}
+
+.meeting-editor-form label {
+    text-align: right;
 }
 
 .modal-card input,

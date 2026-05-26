@@ -179,30 +179,33 @@
 @if (_showEditor)
 {
     <div class="modal-backdrop">
-        <div class="modal-card">
+        <div class="modal-card meeting-editor-card">
             <h2>@(_editor.RoomBookingId.HasValue ? "Sửa cuộc họp" : "Thêm cuộc họp")</h2>
+            <p class="editor-current-user">Người thao tác: <strong>@_employeeId - @_displayName</strong></p>
 
-            <label>Tiêu đề</label>
-            <input @bind="_editor.Title" />
+            <div class="meeting-editor-form">
+                <label for="meeting-title">Tiêu đề <span class="required-mark">*</span></label>
+                <input id="meeting-title" @bind="_editor.Title" required />
 
-            <label>Ngày</label>
-            <input type="date" value="@_editor.DateText" @onchange="e => _editor.DateText = e.Value?.ToString() ?? string.Empty" />
+                <label for="meeting-date">Ngày <span class="required-mark">*</span></label>
+                <input id="meeting-date" type="date" value="@_editor.DateText" @onchange="e => _editor.DateText = e.Value?.ToString() ?? string.Empty" required />
 
-            <label>Phòng</label>
-            <select @bind="_editor.Room">
-                <option value="@Room1">@RoomLabels[Room1]</option>
-                <option value="@Room2">@RoomLabels[Room2]</option>
-                <option value="@Room3">@RoomLabels[Room3]</option>
-            </select>
+                <label for="meeting-room">Phòng <span class="required-mark">*</span></label>
+                <select id="meeting-room" @bind="_editor.Room" required>
+                    <option value="@Room1">@RoomLabels[Room1]</option>
+                    <option value="@Room2">@RoomLabels[Room2]</option>
+                    <option value="@Room3">@RoomLabels[Room3]</option>
+                </select>
 
-            <label>Bắt đầu</label>
-            <input type="time" step="60" value="@_editor.StartTimeText" @onchange="e => _editor.StartTimeText = e.Value?.ToString() ?? string.Empty" />
+                <label for="meeting-start">Bắt đầu <span class="required-mark">*</span></label>
+                <input id="meeting-start" type="time" step="60" value="@_editor.StartTimeText" @onchange="e => _editor.StartTimeText = e.Value?.ToString() ?? string.Empty" required />
 
-            <label>Kết thúc</label>
-            <input type="time" step="60" value="@_editor.EndTimeText" @onchange="e => _editor.EndTimeText = e.Value?.ToString() ?? string.Empty" />
+                <label for="meeting-end">Kết thúc <span class="required-mark">*</span></label>
+                <input id="meeting-end" type="time" step="60" value="@_editor.EndTimeText" @onchange="e => _editor.EndTimeText = e.Value?.ToString() ?? string.Empty" required />
 
-            <label>Ghi chú</label>
-            <textarea rows="3" @bind="_editor.Note"></textarea>
+                <label for="meeting-note">Ghi chú</label>
+                <textarea id="meeting-note" rows="3" @bind="_editor.Note"></textarea>
+            </div>
 
             <div class="modal-actions">
                 <button class="primary icon-button" @onclick="SaveMeetingAsync"><span class="material-symbols-outlined" aria-hidden="true">save</span><span>Lưu</span></button>
