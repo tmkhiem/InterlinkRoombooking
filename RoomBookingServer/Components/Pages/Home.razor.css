@@ -97,9 +97,9 @@
     border-radius: 999px;
 }
 
-.user-menu-trigger .material-symbols-outlined {
-    font-size: 1.55rem;
-}
+    .user-menu-trigger .material-symbols-outlined {
+        font-size: 1.55rem;
+    }
 
 .user-menu-panel {
     display: none;
@@ -133,9 +133,9 @@
     box-sizing: border-box;
 }
 
-.logout-link:hover {
-    background: #f4effb;
-}
+    .logout-link:hover {
+        background: #f4effb;
+    }
 
 button {
     border: 1px solid #cbc3dc;
@@ -147,22 +147,22 @@ button {
     transition: box-shadow .2s ease, transform .2s ease, background .2s ease;
 }
 
-button:hover {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, .16);
-    transform: translateY(-1px);
-}
+    button:hover {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, .16);
+        transform: translateY(-1px);
+    }
 
-button.primary {
-    background: #6750a4;
-    border-color: #6750a4;
-    color: #fff;
-}
+    button.primary {
+        background: #6750a4;
+        border-color: #6750a4;
+        color: #fff;
+    }
 
-button.danger {
-    background: #b3261e;
-    border-color: #b3261e;
-    color: #fff;
-}
+    button.danger {
+        background: #b3261e;
+        border-color: #b3261e;
+        color: #fff;
+    }
 
 .icon-button {
     display: inline-flex;
@@ -185,21 +185,21 @@ button.danger {
     box-shadow: 0 2px 8px rgba(0, 0, 0, .14);
 }
 
-.calendar-table th,
-.calendar-table td {
-    border: 1px solid #ddd6ec;
-    text-align: center;
-}
+    .calendar-table th,
+    .calendar-table td {
+        border: 1px solid #ddd6ec;
+        text-align: center;
+    }
 
-.calendar-table th {
-    background: #ece6f0;
-    color: #4a4458;
-    font-size: .84rem;
-    padding: 0;
-    position: relative;
-    overflow: visible;
-    height: 2.6rem;
-}
+    .calendar-table th {
+        background: #ece6f0;
+        color: #4a4458;
+        font-size: .84rem;
+        padding: 0;
+        position: relative;
+        overflow: visible;
+        height: 2.6rem;
+    }
 
 .timeline-spacer {
     width: 145px;
@@ -221,10 +221,10 @@ button.danger {
     color: #332d41;
 }
 
-.day-cell span {
-    font-weight: 400;
-    color: #5e5868;
-}
+    .day-cell span {
+        font-weight: 400;
+        color: #5e5868;
+    }
 
 .day-row-top td {
     border-top: 2px solid #7a7486;
@@ -271,15 +271,15 @@ button.danger {
     box-shadow: -6px 0 8px rgba(179, 38, 30, .32), -18px 0 18px rgba(179, 38, 30, .2);
 }
 
-.current-time-marker::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 100%;
-    width: 64px;
-    background: linear-gradient(to left, rgba(179, 38, 30, .26), rgba(179, 38, 30, 0));
-}
+    .current-time-marker::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 100%;
+        width: 64px;
+        background: linear-gradient(to left, rgba(179, 38, 30, .26), rgba(179, 38, 30, 0));
+    }
 
 .lane-label {
     position: absolute;
@@ -299,8 +299,7 @@ button.danger {
     position: absolute;
     top: .2rem;
     height: calc(100% - .4rem);
-    border-radius: .6rem;
-    border: 1px solid transparent;
+    border-radius: .3rem;
     box-sizing: border-box;
     font-size: .78rem;
     font-weight: 600;
@@ -312,22 +311,25 @@ button.danger {
     z-index: 3;
 }
 
-.meeting-chip.room-1 {
-    background: #d9f0d8;
-}
+    .meeting-chip.room-1 {
+        background: #d9f0d8;
+        border: 1px solid #b1d1af;
+    }
 
-.meeting-chip.room-2 {
-    background: #d7ecff;
-}
+    .meeting-chip.room-2 {
+        background: #d7ecff;
+        border: 1px solid #93b2cd;
+    }
 
-.meeting-chip.room-3 {
-    background: #ffe6bf;
-}
+    .meeting-chip.room-3 {
+        background: #ffe6bf;
+        border: 1px solid #d3ad70;
+    }
 
-.meeting-chip.state-1 {
-    background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .55) 0 8px, rgba(255, 255, 255, 0) 8px 16px);
-    border: 2px dashed #615a74;
-}
+    .meeting-chip.state-1 {
+        background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .55) 0 8px, rgba(255, 255, 255, 0) 8px 16px);
+        border: 2px dashed #615a74;
+    }
 
 .modal-backdrop {
     position: fixed;
@@ -350,10 +352,10 @@ button.danger {
     box-shadow: 0 10px 30px rgba(0, 0, 0, .24);
 }
 
-.modal-card h2 {
-    margin: 0 0 .5rem 0;
-    color: #1d1b20;
-}
+    .modal-card h2 {
+        margin: 0 0 .5rem 0;
+        color: #1d1b20;
+    }
 
 .booking-details-card {
     gap: .45rem;
