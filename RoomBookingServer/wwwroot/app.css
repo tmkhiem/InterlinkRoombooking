@@ -40,6 +40,7 @@ body {
     height: 100%;
     margin: 0;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
+    font-size: 14px;
     background-color: #e0dbd4;
     background-image: url("/marble-bg-main.jpg");
     background-size: cover;
