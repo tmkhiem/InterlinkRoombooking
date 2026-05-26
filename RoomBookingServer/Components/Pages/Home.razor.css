@@ -333,7 +333,7 @@ button {
     position: absolute;
     left: 50%;
     bottom: calc(100% + .35rem);
-    transform: translateX(-50%) translateY(.15rem);
+    transform: translate(-50%, .15rem);
     min-width: max-content;
     width: max-content;
     max-width: min(28rem, 85vw);
@@ -358,7 +358,7 @@ button {
 .meeting-chip:focus-visible .meeting-chip-callout {
     opacity: 1;
     visibility: visible;
-    transform: translateX(-50%) translateY(0);
+    transform: translate(-50%, 0);
 }
 
     .meeting-chip.room-1 {
