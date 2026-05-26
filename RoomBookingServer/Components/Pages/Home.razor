@@ -258,7 +258,7 @@
 							@foreach (var file in _editorPendingFiles)
 							{
 								<li>
-									<span>@file.FileName</span>
+									<span>@file.File.Name</span>
 									<span class="document-meta">(@FormatFileSize(file.Size))</span>
 									<button type="button" class="danger icon-button mini-icon-button" @onclick="() => RemovePendingFile(file.Token)">
 										<span class="material-symbols-outlined" aria-hidden="true">close</span>
@@ -545,7 +545,11 @@
 					.ToListAsync();
 				foreach (var document in removableDocuments)
 				{
-					await DocumentStorage.DeleteAsync(document.StoragePath);
+					if (!await DocumentStorage.DeleteAsync(document.StoragePath))
+					{
+						_error = "Không thể xóa một số tập tin cũ.";
+						return;
+					}
 				}
 
 				db.BookingDocuments.RemoveRange(removableDocuments);
@@ -556,7 +560,7 @@
 				await using var stream = pendingFile.File.OpenReadStream(MaxUploadFileSizeBytes);
 				var stored = await DocumentStorage.SaveAsync(
 					stream,
-					pendingFile.FileName,
+					pendingFile.File.Name,
 					pendingFile.File.ContentType,
 					_employeeId);
 				uploadedStoragePaths.Add(stored.StoragePath);
@@ -616,7 +620,11 @@
 			.ToListAsync();
 		foreach (var document in documents)
 		{
-			await DocumentStorage.DeleteAsync(document.StoragePath);
+			if (!await DocumentStorage.DeleteAsync(document.StoragePath))
+			{
+				_error = "Không thể xóa tập tin đính kèm của cuộc họp.";
+				return;
+			}
 		}
 
 		db.BookingDocuments.RemoveRange(documents);
@@ -676,26 +684,30 @@
 
 	private async Task OnEditorFilesChanged(InputFileChangeEventArgs eventArgs)
 	{
-		if (_editorPendingFiles.Count + eventArgs.FileCount > MaxUploadFileCount)
+		_error = null;
+		var remainingCapacity = MaxUploadFileCount - _editorPendingFiles.Count;
+		if (remainingCapacity <= 0 || eventArgs.FileCount > remainingCapacity)
 		{
 			_error = $"Chỉ được tải tối đa {MaxUploadFileCount} tập tin.";
 			return;
 		}
 
-		foreach (var file in eventArgs.GetMultipleFiles(MaxUploadFileCount))
+		var selectedFiles = eventArgs.GetMultipleFiles(remainingCapacity);
+		var oversizedFile = selectedFiles.FirstOrDefault(file => file.Size > MaxUploadFileSizeBytes);
+		if (oversizedFile is not null)
+		{
+			_error = $"Tập tin '{oversizedFile.Name}' vượt quá giới hạn {MaxUploadFileSizeBytes / 1024 / 1024} MB.";
+			return;
+		}
+
+		foreach (var file in selectedFiles)
 		{
 			if (file.Size <= 0)
 			{
 				continue;
 			}
 
-			if (file.Size > MaxUploadFileSizeBytes)
-			{
-				_error = $"Tập tin '{file.Name}' vượt quá giới hạn {MaxUploadFileSizeBytes / 1024 / 1024} MB.";
-				continue;
-			}
-
-			_editorPendingFiles.Add(new PendingUploadFile(Guid.NewGuid(), file, file.Name, file.Size));
+			_editorPendingFiles.Add(new PendingUploadFile(Guid.NewGuid(), file, file.Size));
 		}
 
 		await InvokeAsync(StateHasChanged);
@@ -819,7 +831,6 @@
 	private sealed record PendingUploadFile(
 		Guid Token,
 		IBrowserFile File,
-		string FileName,
 		long Size);
 
 	private sealed class MeetingEditorModel

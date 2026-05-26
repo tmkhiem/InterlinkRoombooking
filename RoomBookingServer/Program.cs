@@ -202,7 +202,7 @@ namespace RoomBookingServer
 
                 if (!context.Request.HasFormContentType)
                 {
-                    return Results.BadRequest("Dữ liệu upload không hợp lệ.");
+                    return Results.BadRequest("Dữ liệu tải lên không hợp lệ.");
                 }
 
                 var form = await context.Request.ReadFormAsync(cancellationToken);
@@ -233,7 +233,7 @@ namespace RoomBookingServer
                             return Results.BadRequest($"Tập tin '{file.FileName}' vượt quá giới hạn {MaxFileSizeBytes / 1024 / 1024} MB.");
                         }
 
-                        await using var fileStream = file.OpenReadStream(MaxFileSizeBytes, cancellationToken);
+                        await using var fileStream = file.OpenReadStream();
                         var stored = await documentStorage.SaveAsync(
                             fileStream,
                             file.FileName,

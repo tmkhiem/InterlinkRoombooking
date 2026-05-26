@@ -37,6 +37,7 @@ public sealed class BookingDocumentStorage(
     ILogger<BookingDocumentStorage> logger) : IBookingDocumentStorage
 {
     private const string StorageFolderName = "booking-documents";
+    private static readonly TimeSpan DefaultDocumentLifetime = TimeSpan.FromDays(1);
 
     public string RootPath => Path.Combine(environment.ContentRootPath, StorageFolderName);
 
@@ -73,7 +74,7 @@ public sealed class BookingDocumentStorage(
             string.IsNullOrWhiteSpace(contentType) ? null : contentType.Trim(),
             fileSize,
             timestamp,
-            timestamp.AddDays(1));
+            timestamp.Add(DefaultDocumentLifetime));
     }
 
     public Task<bool> DeleteAsync(string storagePath, CancellationToken cancellationToken = default)
@@ -84,9 +85,14 @@ public sealed class BookingDocumentStorage(
         }
 
         var fullPath = ResolveStoragePath(storagePath);
-        if (!IsPathInRoot(fullPath) || !File.Exists(fullPath))
+        if (!IsPathInRoot(fullPath))
         {
             return Task.FromResult(false);
+        }
+
+        if (!File.Exists(fullPath))
+        {
+            return Task.FromResult(true);
         }
 
         File.Delete(fullPath);
@@ -122,14 +128,7 @@ public sealed class BookingDocumentStorage(
             Directory.CreateDirectory(RootPath);
 
             await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-            var documents = await db.BookingDocuments.ToListAsync(cancellationToken);
-            if (documents.Count == 0)
-            {
-                return;
-            }
-
-            db.BookingDocuments.RemoveRange(documents);
-            await db.SaveChangesAsync(cancellationToken);
+            await db.BookingDocuments.ExecuteDeleteAsync(cancellationToken);
         }
         catch (Exception ex)
         {
@@ -146,6 +145,11 @@ public sealed class BookingDocumentStorage(
     private bool IsPathInRoot(string fullPath)
     {
         var root = Path.GetFullPath(RootPath);
+        if (!root.EndsWith(Path.DirectorySeparatorChar))
+        {
+            root += Path.DirectorySeparatorChar;
+        }
+
         return fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase);
     }
 }

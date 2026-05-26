@@ -1,5 +1,8 @@
 namespace RoomBookingServer.Services;
 
+/// <summary>
+/// Ephemeral document cleanup policy: clear uploaded booking documents on server startup and shutdown.
+/// </summary>
 public sealed class BookingDocumentCleanupHostedService(
     IBookingDocumentStorage documentStorage) : IHostedService
 {
