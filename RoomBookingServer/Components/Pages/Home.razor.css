@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     gap: .9rem;
+    overflow-x: auto;
 }
 
 .top-bar {
@@ -11,10 +12,12 @@
     gap: 1rem;
     min-height: 64px;
     padding: .75rem 1rem;
-    background: #fff;
-    border: 1px solid #e2d9f1;
+    background: rgba(255, 255, 255, 0.60);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.75);
     border-radius: 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
 }
 
 .brand-panel {
@@ -108,8 +111,10 @@
     right: 0;
     min-width: 9rem;
     padding: .35rem;
-    background: #fff;
-    border: 1px solid #d8d0e6;
+    background: rgba(255, 255, 255, 0.80);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.70);
     border-radius: .75rem;
     box-shadow: 0 12px 24px rgba(0, 0, 0, .12);
     z-index: 10;
@@ -182,17 +187,21 @@ button {
     min-width: 1100px;
     border-radius: 1rem;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, .14);
+    position: relative;
+    background: rgba(255, 255, 255, 0.42);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(160%);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .16);
 }
 
     .calendar-table th,
     .calendar-table td {
-        border: 1px solid #ddd6ec;
+        border: 1px solid rgba(221, 214, 236, 0.70);
         text-align: center;
     }
 
     .calendar-table th {
-        background: #ece6f0;
+        background: rgba(236, 230, 240, 0.65);
         color: #4a4458;
         font-size: .84rem;
         padding: 0;
@@ -217,7 +226,7 @@ button {
 .day-cell {
     width: 145px;
     font-weight: 600;
-    background: #f7f2fa;
+    background: rgba(247, 242, 250, 0.58);
     color: #332d41;
 }
 
@@ -243,7 +252,7 @@ button {
     position: relative;
     height: 2.35rem;
     padding: 0;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.45);
 }
 
 .hour-grid {
