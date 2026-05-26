@@ -5,6 +5,7 @@ h1:focus {
 :root {
     --color-brand-blue: #005c9a;
     --color-brand-blue-dark: #003f72;
+    --color-brand-blue-dark-glass: rgba(0, 63, 114, .68);
     --color-accent-red: #e4161f;
     --color-accent-red-shadow-strong: rgba(228, 22, 31, .32);
     --color-accent-red-shadow-soft: rgba(228, 22, 31, .2);
@@ -45,6 +46,13 @@ body {
     background-attachment: fixed;
     background-position: center;
     color: var(--color-text-primary);
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
 }
 
 .material-symbols-outlined {

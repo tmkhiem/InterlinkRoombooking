@@ -100,6 +100,7 @@
                                     <button type="button"
                                             class="meeting-chip room-@booking.Room state-@booking.State"
                                             style="@GetBookingStyle(booking)"
+                                            title="@GetMeetingQuickDetails(booking)"
                                             @onclick="() => OpenBookingDetails(booking)">
                                         @booking.Title
                                     </button>
@@ -556,6 +557,18 @@
         Booking.Cancelled => "Đã hủy",
         _ => $"Không xác định ({state})"
     };
+
+    private static string GetMeetingQuickDetails(Booking booking)
+    {
+        var creator = string.IsNullOrWhiteSpace(booking.Creator)
+            ? booking.Name
+            : string.IsNullOrWhiteSpace(booking.Name)
+                ? booking.Creator
+                : $"{booking.Creator} {booking.Name}";
+
+        var creatorText = string.IsNullOrWhiteSpace(creator) ? "không rõ người đặt" : $"do {creator} đặt";
+        return $"{booking.Title} (phòng R{booking.Room}, {creatorText}) - {booking.StartTime:HH\\:mm} - {booking.EndTime:HH\\:mm}";
+    }
 
     private sealed class MeetingEditorModel
     {
