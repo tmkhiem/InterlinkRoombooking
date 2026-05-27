@@ -36,7 +36,7 @@ public sealed class BookingDocumentCleanupHostedService(
             using var scope = serviceScopeFactory.CreateScope();
             var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<RoombookingContext>>();
             var documentStorage = scope.ServiceProvider.GetRequiredService<IBookingDocumentStorage>();
-            var today = DateOnly.FromDateTime(DateTime.Now);
+            var today = DateOnly.FromDateTime(DateTime.Today);
 
             await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
             var staleDocuments = await db.BookingDocuments

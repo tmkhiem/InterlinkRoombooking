@@ -152,15 +152,16 @@ When a booking is deleted:
 
 If any file deletion fails, the operation is aborted with an error and the booking is not deleted.
 
-### Server Startup / Shutdown (Ephemeral Storage Policy)
+### Background Cleanup Policy
 
-**`BookingDocumentCleanupHostedService`** runs on both startup and shutdown:
-- All files under `{ContentRoot}/booking-documents/` are deleted from disk (the directory is recreated empty).
-- All `BookingDocument` rows are deleted from the database.
+**`BookingDocumentCleanupHostedService`** runs periodically (hourly) while the server is running.
+It only removes stale documents:
+- `BookingDocument.DeletedAtUtc` is set.
+- The related booking no longer exists.
+- The booking date is earlier than today (documents remain available for the full booking day).
 
-> **This means uploaded documents are ephemeral**: they do not survive a server restart. Documents are only intended to be accessible during the lifetime of the server process (e.g., during the booking meeting day or active session). This design is intentional for the current deployment model.
-
-The `ExpiresAtUtc` column in `BookingDocument` was scaffolded for potential future use (e.g., a scheduled cleanup of old files without a full purge), but no scheduled expiry-based cleanup is currently implemented.
+The service deletes files from disk first, then removes their `BookingDocument` rows from the database.
+Because cleanup is policy-based and not tied to startup/shutdown, uploaded documents persist across server restarts.
 
 ### Summary Table
 
@@ -169,8 +170,7 @@ The `ExpiresAtUtc` column in `BookingDocument` was scaffolded for potential futu
 | File uploaded | Created in `booking-documents/` | `BookingDocument` inserted |
 | File removed from editor | Deleted | `BookingDocument` deleted |
 | Booking deleted | All booking files deleted | All `BookingDocument` rows deleted; `Booking` row deleted |
-| Server starts | All files deleted (directory wiped) | All `BookingDocument` rows deleted |
-| Server stops | All files deleted (directory wiped) | All `BookingDocument` rows deleted |
+| Background cleanup tick | Only stale files are deleted (past booking day, deleted marker, or missing booking) | Matching stale `BookingDocument` rows deleted |
 
 ---
 
@@ -202,7 +202,7 @@ File limits shown in the UI are read from the injected `IOptions<DocumentUploadO
 | `SaveAsync` | Writes a stream to disk; returns metadata including the generated storage path. |
 | `DeleteAsync` | Deletes a file by storage path; validates the path stays inside the root directory. |
 | `OpenReadAsync` | Opens a file for streaming; validates path. Returns `null` if missing or out of bounds. |
-| `CleanupAllAsync` | Deletes the entire storage directory and all database rows (used on startup/shutdown). |
+| `CleanupAllAsync` | Utility method that deletes the entire storage directory and all `BookingDocument` rows. |
 
 The root storage path is `{IWebHostEnvironment.ContentRootPath}/booking-documents/`. Path traversal is guarded: any path that resolves outside this root is rejected silently.
 
