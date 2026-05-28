@@ -2,10 +2,16 @@
 @attribute [Authorize]
 @using System.Globalization
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.Extensions.Options
 @using RoomBookingServer.Models.Db.Roombooking
+@using RoomBookingServer.Options
+@using RoomBookingServer.Services
 @inject IDbContextFactory<RoombookingContext> RoomDbFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IBookingDocumentStorage DocumentStorage
+@inject IOptions<DocumentUploadOptions> UploadOptions
 
 <PageTitle>Đặt Phòng</PageTitle>
 
@@ -100,7 +106,7 @@
 									<button type="button"
 											class="meeting-chip room-@booking.Room state-@booking.State"
 											style="@GetBookingStyle(booking)"
-											@onclick="() => OpenBookingDetails(booking)">
+											@onclick="() => OpenBookingDetailsAsync(booking)">
 										<span class="meeting-chip-label">@booking.Title</span>
 										<span class="meeting-chip-callout">@GetMeetingQuickDetails(booking)</span>
 									</button>
@@ -156,11 +162,38 @@
 			{
 				<p class="details-note-title"><strong>Không có ghi chú.</strong></p>
 			}
+			@if (_selectedDocuments.Count > 0)
+			{
+				var canDownloadSelectedDocuments = CanDownloadDocuments(_selectedBooking);
+				<p class="details-note-title"><strong>Tài liệu đính kèm:</strong></p>
+				<ul class="document-list">
+					@foreach (var document in _selectedDocuments)
+					{
+						<li>
+							@if (canDownloadSelectedDocuments)
+							{
+								<a href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
+									@document.OriginalFileName
+								</a>
+							}
+							else
+							{
+								<span>@document.OriginalFileName</span>
+							}
+							<span class="document-meta">(@FormatFileSize(document.FileSizeBytes))</span>
+						</li>
+					}
+				</ul>
+			}
+			else
+			{
+				<p class="details-note-title"><strong>Không có tài liệu đính kèm.</strong></p>
+			}
 
 			<div class="modal-actions">
 				@if (CanEdit(_selectedBooking))
 				{
-					<button class="icon-button" @onclick="OpenEditMeeting"><span class="material-symbols-outlined" aria-hidden="true">edit</span><span>Sửa</span></button>
+					<button class="icon-button" @onclick="OpenEditMeetingAsync"><span class="material-symbols-outlined" aria-hidden="true">edit</span><span>Sửa</span></button>
 				}
 				@if (CanDelete(_selectedBooking))
 				{
@@ -183,34 +216,128 @@
 
 			<h2>@(_editor.RoomBookingId.HasValue ? "Sửa cuộc họp" : "Thêm cuộc họp")</h2>			
 
-			<div class="meeting-editor-form">
-				
-				<label for="meeting-title">Tiêu đề <span class="required-mark">*</span></label>
-				<input id="meeting-title" @bind="_editor.Title" required />
+			<div class="meeting-editor-layout">
+				<div class="meeting-editor-main">
+					<div class="meeting-editor-form">
+						<label for="meeting-title">Tiêu đề <span class="required-mark">*</span></label>
+						<input id="meeting-title" @bind="_editor.Title" required />
 
-				<label for="meeting-date">Ngày <span class="required-mark">*</span></label>
-				<input id="meeting-date" type="date" value="@_editor.DateText" @onchange="e => _editor.DateText = e.Value?.ToString() ?? string.Empty" required />
+						<label for="meeting-date">Ngày <span class="required-mark">*</span></label>
+						<input id="meeting-date" type="date" value="@_editor.DateText" @onchange="e => _editor.DateText = e.Value?.ToString() ?? string.Empty" required />
 
-				<label for="meeting-room">Phòng <span class="required-mark">*</span></label>
-				<select id="meeting-room" @bind="_editor.Room" required>
-					<option value="@Room1">@RoomLabels[Room1]</option>
-					<option value="@Room2">@RoomLabels[Room2]</option>
-					<option value="@Room3">@RoomLabels[Room3]</option>
-				</select>
+						<label for="meeting-room">Phòng <span class="required-mark">*</span></label>
+						<select id="meeting-room" @bind="_editor.Room" required>
+							<option value="@Room1">@RoomLabels[Room1]</option>
+							<option value="@Room2">@RoomLabels[Room2]</option>
+							<option value="@Room3">@RoomLabels[Room3]</option>
+						</select>
 
-				<label for="meeting-start">Bắt đầu <span class="required-mark">*</span></label>
-				<input id="meeting-start" type="time" step="60" value="@_editor.StartTimeText" @onchange="e => _editor.StartTimeText = e.Value?.ToString() ?? string.Empty" required />
+						<label for="meeting-start">Bắt đầu <span class="required-mark">*</span></label>
+						<input id="meeting-start" type="time" step="60" value="@_editor.StartTimeText" @onchange="e => _editor.StartTimeText = e.Value?.ToString() ?? string.Empty" required />
 
-				<label for="meeting-end">Kết thúc <span class="required-mark">*</span></label>
-				<input id="meeting-end" type="time" step="60" value="@_editor.EndTimeText" @onchange="e => _editor.EndTimeText = e.Value?.ToString() ?? string.Empty" required />
+						<label for="meeting-end">Kết thúc <span class="required-mark">*</span></label>
+						<input id="meeting-end" type="time" step="60" value="@_editor.EndTimeText" @onchange="e => _editor.EndTimeText = e.Value?.ToString() ?? string.Empty" required />
 
-				<label for="meeting-note">Ghi chú</label>
-				<textarea id="meeting-note" rows="3" @bind="_editor.Note"></textarea>
+						<label for="meeting-note">Ghi chú</label>
+						<textarea id="meeting-note" rows="3" @bind="_editor.Note"></textarea>
+					</div>
+				</div>
+				<div class="meeting-editor-documents">
+					<label for="meeting-documents">Tài liệu đính kèm</label>
+					<div class="document-editor-panel">
+						<InputFile id="meeting-documents" class="document-file-input" style="display:none !important;" hidden tabindex="-1" OnChange="OnEditorFilesChanged" multiple disabled="@_isSavingMeeting" />
+						<div class="document-dropzone"
+							data-input-id="meeting-documents"
+							ondragover="window.roomBookingDropzone?.dragOver(event)"
+							ondrop="window.roomBookingDropzone?.dropFiles(event)">
+							<div class="document-dropzone-header">
+								<p class="document-dropzone-title">Kéo thả tập tin vào đây</p>
+								<p id="meeting-documents-help" class="document-dropzone-subtitle">Tối đa @MaxUploadFileCount tập tin, mỗi tập tin @((MaxUploadFileSizeBytes / 1024 / 1024).ToString()) MB</p>
+								<button type="button"
+										class="icon-button document-dropzone-button"
+										data-input-id="meeting-documents"
+										aria-describedby="meeting-documents-help"
+										onclick="window.roomBookingDropzone?.openPicker(event)"
+										style="visibility:hidden"
+										disabled="@_isSavingMeeting">
+									<span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
+									<span>Chọn tập tin</span>
+								</button>
+							</div>
+
+							<div class="document-dropzone-content">
+								@if (_editorExistingDocuments.Count == 0 && _editorPendingFiles.Count == 0)
+								{
+									<p class="document-dropzone-empty">Chưa có tài liệu nào được thêm.</p>
+								}
+
+								@if (_editorExistingDocuments.Count > 0)
+								{
+									<div class="document-file-section">
+										<p class="editor-documents-label">Tài liệu hiện có</p>
+										<ul class="document-list">
+											@foreach (var document in _editorExistingDocuments)
+											{
+												<li class="document-file-row">
+													<span class="material-symbols-outlined document-file-icon" aria-hidden="true">description</span>
+													<div class="document-file-details">
+														<a class="document-file-name" href="@GetDocumentDownloadUrl(document.RoomBookingId, document.BookingDocumentId)" target="_blank" rel="noopener noreferrer">
+															@document.OriginalFileName
+														</a>
+														<span class="document-file-meta">@FormatFileSize(document.FileSizeBytes)</span>
+													</div>
+													<button type="button" class="danger icon-button mini-icon-button document-row-action" aria-label="Xóa tập tin" @onclick="() => RemoveExistingDocument(document.BookingDocumentId)">
+														<span class="material-symbols-outlined" aria-hidden="true">close</span>
+													</button>
+												</li>
+											}
+										</ul>
+									</div>
+								}
+
+								@if (_editorPendingFiles.Count > 0)
+								{
+									<div class="document-file-section">
+										<p class="editor-documents-label">Tập tin sẽ tải lên</p>
+										<ul class="document-list upload-status-list">
+											@foreach (var file in _editorPendingFiles)
+											{
+												<li class="document-file-row upload-status-item">
+													<span class="material-symbols-outlined document-file-icon" aria-hidden="true">description</span>
+													<div class="document-file-details">
+														<span class="document-file-name" title="@file.File.Name">@file.File.Name</span>
+														<div class="upload-file-status-row">
+															@if (file.IsUploaded)
+															{
+																<progress class="upload-progress" max="100" value="100"></progress>
+															}
+															else
+															{
+																<progress class="upload-progress" max="100"></progress>
+															}
+															<div class="upload-file-meta-row">
+																<span class="document-file-meta">@FormatFileSize(file.Size)</span>
+																<span class="upload-status-text">@GetUploadStatusText(file)</span>
+															</div>
+														</div>
+													</div>
+													<button type="button" class="danger icon-button mini-icon-button document-row-action" aria-label="Xóa tập tin đang tải lên" disabled="@(_isSavingMeeting || file.IsUploaded)" @onclick="() => RemovePendingFile(file.Token)">
+														<span class="material-symbols-outlined" aria-hidden="true">close</span>
+													</button>
+												</li>
+											}
+										</ul>
+									</div>
+								}
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 
 			<div class="modal-actions">
-				<button class="primary icon-button" @onclick="SaveMeetingAsync"><span class="material-symbols-outlined" aria-hidden="true">save</span><span>Lưu</span></button>
-				<button class="icon-button" @onclick="CloseEditor"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Hủy</span></button>
+				<button class="primary icon-button" @onclick="SaveMeetingAsync" disabled="@_isSavingMeeting"><span class="material-symbols-outlined" aria-hidden="true">save</span><span>Lưu</span></button>
+				<button class="icon-button" @onclick="CloseEditor" disabled="@_isSavingMeeting"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>Hủy</span></button>
 			</div>
 		</div>
 	</div>
@@ -220,6 +347,8 @@
 	private const int Room1 = 1;
 	private const int Room2 = 2;
 	private const int Room3 = 3;
+	private long MaxUploadFileSizeBytes => UploadOptions.Value.MaxFileSizeBytes;
+	private int MaxUploadFileCount => UploadOptions.Value.MaxFileCount;
 	private static readonly int[] Rooms = [Room1, Room2, Room3];
 	private const int CalendarStartHour = 7;
 	private const int CalendarHourCount = 14;
@@ -243,6 +372,11 @@
 	private bool _showDetails;
 	private bool _showEditor;
 	private MeetingEditorModel _editor = new();
+	private List<BookingDocumentViewModel> _selectedDocuments = [];
+	private List<BookingDocumentViewModel> _editorExistingDocuments = [];
+	private readonly HashSet<long> _documentsMarkedForDeletion = [];
+	private readonly List<PendingUploadFile> _editorPendingFiles = [];
+	private bool _isSavingMeeting;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -293,10 +427,11 @@
 		_ => "day-row day-row-bottom"
 	};
 
-	private void OpenBookingDetails(Booking booking)
+	private async Task OpenBookingDetailsAsync(Booking booking)
 	{
 		_error = null;
 		_selectedBooking = booking;
+		_selectedDocuments = await LoadDocumentsForBookingAsync(booking.RoomBookingId);
 		_showDetails = true;
 	}
 
@@ -346,10 +481,13 @@
 	{
 		_error = null;
 		_editor = MeetingEditorModel.CreateNew(_weekStart);
+		_editorExistingDocuments = [];
+		_documentsMarkedForDeletion.Clear();
+		_editorPendingFiles.Clear();
 		_showEditor = true;
 	}
 
-	private void OpenEditMeeting()
+	private async Task OpenEditMeetingAsync()
 	{
 		if (_selectedBooking is null || !CanEdit(_selectedBooking))
 		{
@@ -358,6 +496,9 @@
 
 		_error = null;
 		_editor = MeetingEditorModel.FromBooking(_selectedBooking);
+		_editorExistingDocuments = await LoadDocumentsForBookingAsync(_selectedBooking.RoomBookingId);
+		_documentsMarkedForDeletion.Clear();
+		_editorPendingFiles.Clear();
 		_showDetails = false;
 		_showEditor = true;
 	}
@@ -393,6 +534,19 @@
 		if (_editor.Room is < Room1 or > Room3)
 		{
 			_error = "Phòng không hợp lệ.";
+			return;
+		}
+
+		var totalDocumentCount = _editorExistingDocuments.Count + _editorPendingFiles.Count;
+		if (totalDocumentCount > MaxUploadFileCount)
+		{
+			_error = $"Chỉ được tải tối đa {MaxUploadFileCount} tập tin.";
+			return;
+		}
+
+		if (_editorPendingFiles.Any(f => f.Size > MaxUploadFileSizeBytes))
+		{
+			_error = $"Mỗi tập tin chỉ được tối đa {MaxUploadFileSizeBytes / 1024 / 1024} MB.";
 			return;
 		}
 
@@ -445,9 +599,88 @@
 		booking.Note = string.IsNullOrWhiteSpace(_editor.Note) ? null : _editor.Note.Trim();
 		booking.State = booking.Room == Room1 ? Booking.ConfirmationWait : Booking.Booked;
 
-		await db.SaveChangesAsync();
+		var uploadedStoragePaths = new List<string>();
+		_isSavingMeeting = true;
+		await InvokeAsync(StateHasChanged);
+		try
+		{
+			await db.SaveChangesAsync();
+
+			if (_documentsMarkedForDeletion.Count > 0)
+			{
+				var removableDocuments = await db.BookingDocuments
+					.Where(d => d.RoomBookingId == booking.RoomBookingId && _documentsMarkedForDeletion.Contains(d.BookingDocumentId))
+					.ToListAsync();
+				foreach (var document in removableDocuments)
+				{
+					if (!await DocumentStorage.DeleteAsync(document.StoragePath))
+					{
+						_error = "Không thể xóa một số tập tin cũ.";
+						return;
+					}
+				}
+
+				db.BookingDocuments.RemoveRange(removableDocuments);
+			}
+
+			foreach (var pendingFile in _editorPendingFiles)
+			{
+				pendingFile.IsUploading = true;
+				pendingFile.IsUploaded = false;
+				await InvokeAsync(StateHasChanged);
+
+				await using var stream = pendingFile.File.OpenReadStream(MaxUploadFileSizeBytes);
+				var stored = await DocumentStorage.SaveAsync(
+					stream,
+					pendingFile.File.Name,
+					pendingFile.File.ContentType,
+					_employeeId);
+				uploadedStoragePaths.Add(stored.StoragePath);
+				pendingFile.IsUploading = false;
+				pendingFile.IsUploaded = true;
+				await InvokeAsync(StateHasChanged);
+
+				db.BookingDocuments.Add(new BookingDocument
+				{
+					RoomBookingId = booking.RoomBookingId,
+					UploadedBy = _employeeId,
+					OriginalFileName = stored.OriginalFileName,
+					StoredFileName = stored.StoredFileName,
+					StoragePath = stored.StoragePath,
+					ContentType = stored.ContentType,
+					FileSizeBytes = stored.FileSizeBytes,
+					UploadedAtUtc = stored.UploadedAtUtc,
+					ExpiresAtUtc = stored.ExpiresAtUtc
+				});
+			}
+
+			await db.SaveChangesAsync();
+		}
+		catch
+		{
+			foreach (var storagePath in uploadedStoragePaths)
+			{
+				await DocumentStorage.DeleteAsync(storagePath);
+			}
+
+			_error = "Không thể lưu tập tin đính kèm.";
+			return;
+		}
+		finally
+		{
+			foreach (var pendingFile in _editorPendingFiles)
+			{
+				pendingFile.IsUploading = false;
+			}
+
+			_isSavingMeeting = false;
+			await InvokeAsync(StateHasChanged);
+		}
 
 		_showEditor = false;
+		_documentsMarkedForDeletion.Clear();
+		_editorPendingFiles.Clear();
+		_editorExistingDocuments = [];
 		await LoadWeekAsync();
 	}
 
@@ -467,11 +700,25 @@
 			return;
 		}
 
+		var documents = await db.BookingDocuments
+			.Where(d => d.RoomBookingId == booking.RoomBookingId && d.DeletedAtUtc == null)
+			.ToListAsync();
+		foreach (var document in documents)
+		{
+			if (!await DocumentStorage.DeleteAsync(document.StoragePath))
+			{
+				_error = "Không thể xóa tập tin đính kèm của cuộc họp.";
+				return;
+			}
+		}
+
+		db.BookingDocuments.RemoveRange(documents);
 		db.Bookings.Remove(booking);
 		await db.SaveChangesAsync();
 
 		_showDetails = false;
 		_selectedBooking = null;
+		_selectedDocuments = [];
 		await LoadWeekAsync();
 	}
 
@@ -505,15 +752,123 @@
 		await LoadWeekAsync();
 	}
 
+	private async Task<List<BookingDocumentViewModel>> LoadDocumentsForBookingAsync(int bookingId)
+	{
+		await using var db = await RoomDbFactory.CreateDbContextAsync();
+		return await db.BookingDocuments
+			.AsNoTracking()
+			.Where(d => d.RoomBookingId == bookingId && d.DeletedAtUtc == null)
+			.OrderBy(d => d.UploadedAtUtc)
+			.Select(d => new BookingDocumentViewModel(
+				d.BookingDocumentId,
+				d.RoomBookingId,
+				d.OriginalFileName,
+				d.FileSizeBytes))
+			.ToListAsync();
+	}
+
+	private async Task OnEditorFilesChanged(InputFileChangeEventArgs eventArgs)
+	{
+		_error = null;
+		var remainingCapacity = MaxUploadFileCount - (_editorExistingDocuments.Count + _editorPendingFiles.Count);
+		if (remainingCapacity <= 0 || eventArgs.FileCount > remainingCapacity)
+		{
+			_error = $"Chỉ được tải tối đa {MaxUploadFileCount} tập tin.";
+			return;
+		}
+
+		var selectedFiles = eventArgs.GetMultipleFiles(remainingCapacity);
+		var oversizedFile = selectedFiles.FirstOrDefault(file => file.Size > MaxUploadFileSizeBytes);
+		if (oversizedFile is not null)
+		{
+			var safeFileName = Path.GetFileName(oversizedFile.Name);
+			if (string.IsNullOrWhiteSpace(safeFileName))
+			{
+				safeFileName = "tập tin";
+			}
+
+			if (safeFileName.Length > 100)
+			{
+				safeFileName = safeFileName[..100];
+			}
+
+			_error = $"Tập tin '{safeFileName}' vượt quá giới hạn {MaxUploadFileSizeBytes / 1024 / 1024} MB.";
+			return;
+		}
+
+		foreach (var file in selectedFiles)
+		{
+			if (file.Size <= 0)
+			{
+				continue;
+			}
+
+			_editorPendingFiles.Add(new PendingUploadFile(Guid.NewGuid(), file, file.Size));
+		}
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private void RemoveExistingDocument(long bookingDocumentId)
+	{
+		_documentsMarkedForDeletion.Add(bookingDocumentId);
+		_editorExistingDocuments.RemoveAll(d => d.BookingDocumentId == bookingDocumentId);
+	}
+
+	private void RemovePendingFile(Guid token)
+	{
+		if (_isSavingMeeting)
+		{
+			return;
+		}
+
+		_editorPendingFiles.RemoveAll(file => file.Token == token);
+	}
+
+	private static string FormatFileSize(long sizeBytes)
+	{
+		const double kilobyte = 1024d;
+		const double megabyte = kilobyte * 1024d;
+		if (sizeBytes < kilobyte)
+		{
+			return $"{sizeBytes} B";
+		}
+
+		if (sizeBytes < megabyte)
+		{
+			return $"{sizeBytes / kilobyte:F1} KB";
+		}
+
+		return $"{sizeBytes / megabyte:F1} MB";
+	}
+
+	private static string GetDocumentDownloadUrl(int bookingId, long documentId)
+		=> $"/api/bookings/{bookingId}/documents/{documentId}";
+
+	private static string GetUploadStatusText(PendingUploadFile file) => file.IsUploaded
+		? "Đã tải lên"
+		: file.IsUploading ? "Đang tải lên" : "Chờ tải lên";
+
+	private bool CanDownloadDocuments(Booking booking) => CanEdit(booking);
+
 	private bool CanEdit(Booking booking) => string.Equals(booking.Creator, _employeeId, StringComparison.OrdinalIgnoreCase);
 
 	private bool CanDelete(Booking booking) => CanEdit(booking) || _isAdmin;
 
 	private bool CanConfirm(Booking booking) => _isAdmin && booking.Room == Room1 && booking.State == Booking.ConfirmationWait;
 
-	private void CloseDetails() => _showDetails = false;
+	private void CloseDetails()
+	{
+		_showDetails = false;
+		_selectedDocuments = [];
+	}
 
-	private void CloseEditor() => _showEditor = false;
+	private void CloseEditor()
+	{
+		_showEditor = false;
+		_documentsMarkedForDeletion.Clear();
+		_editorPendingFiles.Clear();
+	}
 
 	private async Task PreviousWeek()
 	{
@@ -572,6 +927,28 @@
 
 		var creatorText = string.IsNullOrWhiteSpace(creatorDisplay) ? "không rõ người đặt" : $"do {creatorDisplay} đặt";
 		return $"{booking.Title} (phòng R{booking.Room}, {creatorText}) - {booking.StartTime:HH:mm} - {booking.EndTime:HH:mm}";
+	}
+
+	private sealed record BookingDocumentViewModel(
+		long BookingDocumentId,
+		int RoomBookingId,
+		string OriginalFileName,
+		long FileSizeBytes);
+
+	private sealed class PendingUploadFile
+	{
+		public PendingUploadFile(Guid token, IBrowserFile file, long size)
+		{
+			Token = token;
+			File = file;
+			Size = size;
+		}
+
+		public Guid Token { get; }
+		public IBrowserFile File { get; }
+		public long Size { get; }
+		public bool IsUploading { get; set; }
+		public bool IsUploaded { get; set; }
 	}
 
 	private sealed class MeetingEditorModel

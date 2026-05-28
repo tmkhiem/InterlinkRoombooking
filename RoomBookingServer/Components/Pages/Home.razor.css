@@ -393,7 +393,7 @@ button {
 
 .modal-card {
     background: #fff;
-    width: min(520px, calc(100vw - 2rem));
+    width: min(520px, calc(100vw - 10rem));
     border-radius: 1rem;
     padding: 1rem;
     display: flex;
@@ -412,7 +412,8 @@ button {
 }
 
 .meeting-editor-card {
-    width: min(680px, calc(100vw - 2rem));
+    width: min(980px, calc(100vw - 2rem));
+    max-height: calc(100vh - 10rem);
     padding: 1.4rem 1.7rem;
     gap: .85rem;
 }
@@ -422,12 +423,37 @@ button {
     color: var(--color-text-muted);
 }
 
+.meeting-editor-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+    gap: 1.25rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
+}
+
+.meeting-editor-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 .meeting-editor-form {
     display: grid;
-    grid-template-columns: minmax(140px, 170px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 0.2fr) minmax(0, 1fr);
     column-gap: 1.5rem;
     row-gap: 1rem;
     align-items: center;
+}
+
+.meeting-editor-documents {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: .45rem;
 }
 
 .required-mark {
@@ -503,7 +529,181 @@ button {
     text-align: right;
 }
 
-.modal-card input,
+.document-editor-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.document-dropzone {
+    border: 1.5px dashed var(--color-divider-mid);
+    border-radius: .8rem;
+    background: var(--color-surface-soft);
+    padding: .9rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: .85rem;
+}
+
+.document-file-input {
+    display: none;
+}
+
+.document-dropzone-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .4rem;
+    padding: .25rem 0 .1rem;
+}
+
+.document-dropzone-title,
+.document-dropzone-subtitle {
+    margin: 0;
+    text-align: center;
+}
+
+.document-dropzone-title {
+    font-weight: 600;
+}
+
+.document-dropzone-subtitle {
+    color: var(--color-text-muted);
+    font-size: .85rem;
+}
+
+.document-dropzone-button {
+    margin-top: .2rem;
+}
+
+.document-dropzone-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    overflow-y: auto;
+    padding-right: .2rem;
+}
+
+.document-dropzone-empty {
+    margin: auto 0;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: .92rem;
+}
+
+.document-file-section {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+}
+
+.editor-documents-label {
+    margin: 0;
+    font-size: .9rem;
+    color: var(--color-text-muted);
+}
+
+.document-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.document-file-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .65rem;
+    padding: .65rem .75rem;
+    border-radius: .75rem;
+    background: rgba(255, 255, 255, .7);
+    margin-bottom: .45rem;
+}
+
+.document-file-icon {
+    color: var(--color-brand-blue);
+    font-size: 1.35rem;
+    line-height: 1.35rem;
+    margin-top: .1rem;
+}
+
+.document-file-details {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .28rem;
+}
+
+.document-file-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.document-file-name:hover {
+    text-decoration: underline;
+}
+
+.document-file-meta,
+.document-meta {
+    color: var(--color-text-muted);
+    font-size: .85rem;
+}
+
+.document-row-action {
+    flex: 0 0 auto;
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: .22rem;
+}
+
+.upload-status-item {
+    align-items: center;
+}
+
+.upload-file-status-row {
+    display: flex;
+    flex-direction: column;
+    gap: .28rem;
+}
+
+.upload-file-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .65rem;
+    min-width: 0;
+}
+
+.upload-progress {
+    width: 100%;
+    height: .65rem;
+}
+
+.upload-status-text {
+    font-size: .82rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.mini-icon-button {
+    padding: .22rem .5rem;
+    font-size: .8rem;
+}
+
+.modal-card input:not([type="checkbox"]):not([type="file"]),
 .modal-card select,
 .modal-card textarea {
     width: 100%;
@@ -517,4 +717,31 @@ button {
     display: flex;
     justify-content: flex-end;
     gap: .5rem;
+}
+
+@media (max-width: 900px) {
+    .meeting-editor-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .meeting-editor-card {
+        max-height: calc(100vh - 1.25rem);
+        padding: 1.2rem;
+    }
+
+    .meeting-editor-documents {
+        height: auto;
+    }
+
+    .document-editor-panel {
+        height: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .upload-file-meta-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .15rem;
+    }
 }
