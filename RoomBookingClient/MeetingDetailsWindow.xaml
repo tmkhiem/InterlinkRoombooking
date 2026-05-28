@@ -1,0 +1,35 @@
+<Window x:Class="RoomBookingClient.MeetingDetailsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Meeting details"
+        Width="460"
+        Height="230"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        WindowStyle="ToolWindow"
+        Topmost="False"
+        WindowStartupLocation="Manual">
+    <Border Padding="14" Background="#FFF9FBFF" BorderBrush="#FFC7D5EC" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock x:Name="TitleText" FontSize="18" FontWeight="SemiBold" Text="No active meeting" />
+            <TextBlock x:Name="TimeText" Grid.Row="1" Margin="0,8,0,0" />
+            <TextBlock x:Name="HostText" Grid.Row="2" Margin="0,4,0,0" />
+            <TextBlock x:Name="NoteText" Grid.Row="3" Margin="0,8,0,0" TextWrapping="Wrap" />
+
+            <Button Grid.Row="4"
+                    Width="170"
+                    Height="30"
+                    HorizontalAlignment="Right"
+                    Content="Open uploaded files"
+                    Click="OpenFolderButton_Click" />
+        </Grid>
+    </Border>
+</Window>

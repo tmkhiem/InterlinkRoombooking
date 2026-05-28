@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +42,8 @@ namespace RoomBookingServer
             builder.Services.AddHostedService<BookingDocumentCleanupHostedService>();
             builder.Services.Configure<DocumentUploadOptions>(
                 builder.Configuration.GetSection(DocumentUploadOptions.SectionName));
+            builder.Services.Configure<ClientAppOptions>(
+                builder.Configuration.GetSection(ClientAppOptions.SectionName));
 
             var app = builder.Build();
 
@@ -318,6 +322,143 @@ namespace RoomBookingServer
                 }
             }).RequireAuthorization();
 
+            app.MapGet("/api/client/current-meeting", async (
+                HttpContext context,
+                int room,
+                IDbContextFactory<RoombookingContext> roomFactory,
+                IOptions<ClientAppOptions> clientAppOptions,
+                CancellationToken cancellationToken) =>
+            {
+                if (!HasValidClientApiKey(context, clientAppOptions.Value.ApiKey))
+                {
+                    return Results.Unauthorized();
+                }
+
+                if (room is < 1 or > 3)
+                {
+                    return Results.BadRequest("Room must be between 1 and 3.");
+                }
+
+                var now = TimeProvider.System.GetLocalNow().DateTime;
+                var currentDate = DateOnly.FromDateTime(now);
+                var currentTime = TimeOnly.FromDateTime(now);
+
+                await using var roomDb = await roomFactory.CreateDbContextAsync(cancellationToken);
+                var meeting = await roomDb.Bookings
+                    .AsNoTracking()
+                    .Where(b =>
+                        b.Date == currentDate &&
+                        b.Room == room &&
+                        b.StartTime <= currentTime &&
+                        currentTime < b.EndTime &&
+                        b.State != Booking.Cancelled &&
+                        b.State != Booking.ConfirmationRejected &&
+                        b.State != Booking.Unused)
+                    .OrderBy(b => b.StartTime)
+                    .Select(b => new
+                    {
+                        b.RoomBookingId,
+                        b.Title,
+                        b.Note,
+                        b.Name,
+                        b.Creator,
+                        b.Room,
+                        b.Date,
+                        b.StartTime,
+                        b.EndTime
+                    })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (meeting is null)
+                {
+                    return Results.Ok(new { hasMeeting = false });
+                }
+
+                var documents = await roomDb.BookingDocuments
+                    .AsNoTracking()
+                    .Where(d => d.RoomBookingId == meeting.RoomBookingId && d.DeletedAtUtc == null)
+                    .OrderBy(d => d.UploadedAtUtc)
+                    .Select(d => new
+                    {
+                        d.BookingDocumentId,
+                        d.OriginalFileName,
+                        d.ContentType,
+                        d.FileSizeBytes,
+                        d.UploadedAtUtc
+                    })
+                    .ToListAsync(cancellationToken);
+
+                return Results.Ok(new
+                {
+                    hasMeeting = true,
+                    meeting = new
+                    {
+                        meeting.RoomBookingId,
+                        meeting.Title,
+                        meeting.Note,
+                        meeting.Name,
+                        meeting.Creator,
+                        meeting.Room,
+                        date = meeting.Date.ToString("yyyy-MM-dd"),
+                        startTime = meeting.StartTime.ToString("HH:mm:ss"),
+                        endTime = meeting.EndTime.ToString("HH:mm:ss"),
+                        documents
+                    }
+                });
+            });
+
+            app.MapGet("/api/client/bookings/{bookingId:int}/documents/{documentId:long}", async (
+                HttpContext context,
+                int bookingId,
+                long documentId,
+                int room,
+                IDbContextFactory<RoombookingContext> roomFactory,
+                IOptions<ClientAppOptions> clientAppOptions,
+                IBookingDocumentStorage documentStorage,
+                CancellationToken cancellationToken) =>
+            {
+                if (!HasValidClientApiKey(context, clientAppOptions.Value.ApiKey))
+                {
+                    return Results.Unauthorized();
+                }
+
+                await using var roomDb = await roomFactory.CreateDbContextAsync(cancellationToken);
+                var document = await roomDb.BookingDocuments
+                    .AsNoTracking()
+                    .Where(d =>
+                        d.RoomBookingId == bookingId &&
+                        d.BookingDocumentId == documentId &&
+                        d.DeletedAtUtc == null &&
+                        d.RoomBooking.Room == room)
+                    .Select(d => new
+                    {
+                        d.StoragePath,
+                        d.OriginalFileName,
+                        d.StoredFileName,
+                        d.ContentType
+                    })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (document is null)
+                {
+                    return Results.NotFound();
+                }
+
+                var stream = await documentStorage.OpenReadAsync(document.StoragePath, cancellationToken);
+                if (stream is null)
+                {
+                    return Results.NotFound();
+                }
+
+                var fileName = Path.GetFileName(document.OriginalFileName);
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    fileName = document.StoredFileName;
+                }
+
+                return Results.File(stream, document.ContentType ?? "application/octet-stream", fileName);
+            });
+
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
 
@@ -327,6 +468,29 @@ namespace RoomBookingServer
         private static Task<bool> IsEmployeeAdminAsync(RoombookingContext db, Employee employee)
         {
             return db.Admins.AnyAsync(a => a.EmployeeId == employee.Id);
+        }
+
+        private static bool HasValidClientApiKey(HttpContext context, string configuredApiKey)
+        {
+            if (string.IsNullOrWhiteSpace(configuredApiKey))
+            {
+                return false;
+            }
+
+            var presentedApiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(presentedApiKey))
+            {
+                presentedApiKey = context.Request.Query["apiKey"].ToString();
+            }
+
+            if (string.IsNullOrWhiteSpace(presentedApiKey))
+            {
+                return false;
+            }
+
+            var configuredBytes = Encoding.UTF8.GetBytes(configuredApiKey);
+            var presentedBytes = Encoding.UTF8.GetBytes(presentedApiKey);
+            return CryptographicOperations.FixedTimeEquals(configuredBytes, presentedBytes);
         }
     }
 }

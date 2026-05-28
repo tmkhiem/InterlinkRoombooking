@@ -38,6 +38,7 @@ Browser
 | `ConnectionStrings:Roombooking` | Connection string for the Roombooking SQL Server database (bookings and documents). |
 | `DocumentUpload:MaxFileSizeMB` | Maximum size per uploaded file, in **megabytes**. Default: `25`. |
 | `DocumentUpload:MaxFileCount` | Maximum number of files that can be attached to a single booking. Default: `10`. |
+| `ClientApp:ApiKey` | Shared API key used by the WPF meeting-room client (`X-Api-Key` header). |
 
 ### Example
 
@@ -50,6 +51,9 @@ Browser
   "DocumentUpload": {
     "MaxFileSizeMB": 25,
     "MaxFileCount":  10
+  },
+  "ClientApp": {
+    "ApiKey": "set-a-strong-key"
   }
 }
 ```
@@ -114,6 +118,15 @@ When a booking is created for **Room 1**, its state is automatically set to `Con
 | `GET`  | `/api/bookings/{bookingId}/documents` | Required | List non-deleted documents for a booking. |
 | `GET`  | `/api/bookings/{bookingId}/documents/{documentId}` | Required (owner only) | Stream a document file for download. Only the booking creator can download. |
 | `POST` | `/api/bookings/{bookingId}/documents` | Required (owner or admin) | Upload one or more files (multipart/form-data) and attach them to a booking. Enforces `DocumentUpload` limits. |
+
+### WPF Meeting Room Client
+
+These endpoints are designed for the desktop room client and require `X-Api-Key` (or `apiKey` query parameter) matching `ClientApp:ApiKey`.
+
+| Method | Path | Params | Description |
+|--------|------|--------|-------------|
+| `GET` | `/api/client/current-meeting` | `room` (1-3) | Returns the active meeting for the room at current local time, including document metadata. |
+| `GET` | `/api/client/bookings/{bookingId}/documents/{documentId}` | `room` (1-3) | Downloads a document for the specified booking, scoped to the same room. |
 
 ---
 
