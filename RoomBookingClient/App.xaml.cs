@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
@@ -8,11 +9,22 @@ namespace RoomBookingClient;
 
 public partial class App : Application
 {
+    private const int WindowVisibilityCheckIntervalSeconds = 5;
+    private const int MeetingOvertimeCheckIntervalSeconds = 20;
+    private const double MeetingWindowWidthRatio = 0.48;
+    private const double MeetingWindowHeightRatio = 0.35;
+    private const double MeetingWindowMinWidth = 600;
+    private const double MeetingWindowMaxWidth = 980;
+    private const double MeetingWindowMinHeight = 260;
+    private const double MeetingWindowMaxHeight = 420;
+    private const double MeetingWindowMargin = 16;
+
     private readonly SettingsStore _settingsStore = new();
     private readonly MeetingSyncService _meetingSyncService = new();
     private readonly DispatcherTimer _windowVisibilityTimer;
     private readonly DispatcherTimer _meetingWarningTimer;
     private readonly SingleInstanceManager _singleInstanceManager;
+    private readonly List<string> _pendingLogMessages = new();
 
     private Forms.NotifyIcon? _trayIcon;
     private ConfigWindow? _configWindow;
@@ -29,13 +41,13 @@ public partial class App : Application
 
         _windowVisibilityTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromSeconds(5)
+            Interval = TimeSpan.FromSeconds(WindowVisibilityCheckIntervalSeconds)
         };
         _windowVisibilityTimer.Tick += (_, _) => UpdateMeetingWindowVisibility();
 
         _meetingWarningTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromSeconds(20)
+            Interval = TimeSpan.FromSeconds(MeetingOvertimeCheckIntervalSeconds)
         };
         _meetingWarningTimer.Tick += (_, _) => CheckMeetingOvertime();
     }
@@ -73,6 +85,7 @@ public partial class App : Application
             _meetingSyncService.TriggerRefresh();
         };
         _configWindow.TestWarningRequested += (_, _) => ShowWarning(true);
+        FlushPendingLogs();
         _configWindow.AppendLog("Bảng cấu hình đã sẵn sàng.");
 
         _meetingDetailsWindow = new MeetingDetailsWindow();
@@ -113,7 +126,7 @@ public partial class App : Application
         {
             Icon = System.Drawing.SystemIcons.Application,
             Visible = true,
-            Text = "Interlink Room Booking Client"
+            Text = "Ứng dụng đặt phòng Interlink"
         };
 
         var menu = new Forms.ContextMenuStrip();
@@ -255,10 +268,10 @@ public partial class App : Application
         }
 
         var workArea = SystemParameters.WorkArea;
-        _meetingDetailsWindow.Width = Math.Max(600, Math.Min(980, workArea.Width * 0.48));
-        _meetingDetailsWindow.Height = Math.Max(260, Math.Min(420, workArea.Height * 0.35));
-        _meetingDetailsWindow.Left = workArea.Left + 16;
-        _meetingDetailsWindow.Top = workArea.Top + 16;
+        _meetingDetailsWindow.Width = Math.Max(MeetingWindowMinWidth, Math.Min(MeetingWindowMaxWidth, workArea.Width * MeetingWindowWidthRatio));
+        _meetingDetailsWindow.Height = Math.Max(MeetingWindowMinHeight, Math.Min(MeetingWindowMaxHeight, workArea.Height * MeetingWindowHeightRatio));
+        _meetingDetailsWindow.Left = workArea.Left + MeetingWindowMargin;
+        _meetingDetailsWindow.Top = workArea.Top + MeetingWindowMargin;
 
         if (!_meetingDetailsWindow.IsVisible)
         {
@@ -273,10 +286,40 @@ public partial class App : Application
     {
         if (Dispatcher.CheckAccess())
         {
-            _configWindow?.AppendLog(message);
+            if (_configWindow == null)
+            {
+                _pendingLogMessages.Add(message);
+                return;
+            }
+
+            _configWindow.AppendLog(message);
             return;
         }
 
-        Dispatcher.Invoke(() => _configWindow?.AppendLog(message));
+        Dispatcher.Invoke(() =>
+        {
+            if (_configWindow == null)
+            {
+                _pendingLogMessages.Add(message);
+                return;
+            }
+
+            _configWindow.AppendLog(message);
+        });
+    }
+
+    private void FlushPendingLogs()
+    {
+        if (_configWindow == null || _pendingLogMessages.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var pendingMessage in _pendingLogMessages)
+        {
+            _configWindow.AppendLog(pendingMessage);
+        }
+
+        _pendingLogMessages.Clear();
     }
 }
