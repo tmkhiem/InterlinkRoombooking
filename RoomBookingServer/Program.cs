@@ -15,6 +15,9 @@ namespace RoomBookingServer
 {
     public class Program
     {
+        private const int MinimumRoomNumber = 1;
+        private const int MaximumRoomNumber = 3;
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -334,9 +337,9 @@ namespace RoomBookingServer
                     return Results.Unauthorized();
                 }
 
-                if (room is < 1 or > 3)
+                if (room is < MinimumRoomNumber or > MaximumRoomNumber)
                 {
-                    return Results.BadRequest("Room must be between 1 and 3.");
+                    return Results.BadRequest($"Room must be between {MinimumRoomNumber} and {MaximumRoomNumber}.");
                 }
 
                 var now = TimeProvider.System.GetLocalNow().DateTime;
@@ -420,6 +423,11 @@ namespace RoomBookingServer
                 if (!HasValidClientApiKey(context, clientAppOptions.Value.ApiKey))
                 {
                     return Results.Unauthorized();
+                }
+
+                if (room is < MinimumRoomNumber or > MaximumRoomNumber)
+                {
+                    return Results.BadRequest($"Room must be between {MinimumRoomNumber} and {MaximumRoomNumber}.");
                 }
 
                 await using var roomDb = await roomFactory.CreateDbContextAsync(cancellationToken);

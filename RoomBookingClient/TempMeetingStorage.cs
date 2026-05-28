@@ -11,7 +11,7 @@ public static class TempMeetingStorage
     {
         DeleteCurrentMeetingFolder();
 
-        var path = Path.Combine(Root, $"booking-{bookingId}-{DateTime.Now:yyyyMMddHHmmss}");
+        var path = Path.Combine(Root, $"booking-{bookingId}-{DateTime.Now:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}");
         Directory.CreateDirectory(path);
         return path;
     }

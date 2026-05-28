@@ -27,6 +27,7 @@ public sealed class MeetingSyncService
 
     public MeetingSyncService()
     {
+        _httpClient.Timeout = TimeSpan.FromSeconds(30);
         _timer = new Timer(async _ => await RefreshAsync(), null, Timeout.Infinite, Timeout.Infinite);
     }
 
@@ -39,6 +40,12 @@ public sealed class MeetingSyncService
     public void Stop()
     {
         _timer.Change(Timeout.Infinite, Timeout.Infinite);
+
+        while (Interlocked.CompareExchange(ref _refreshInProgress, 0, 0) == 1)
+        {
+            Thread.Sleep(25);
+        }
+
         _timer.Dispose();
         _httpClient.Dispose();
     }
@@ -82,7 +89,7 @@ public sealed class MeetingSyncService
                 return;
             }
 
-            await using var stream = await response.Content.ReadAsStreamAsync();
+            using var stream = await response.Content.ReadAsStreamAsync();
             var meetingResponse = await JsonSerializer.DeserializeAsync<CurrentMeetingResponse>(stream, _jsonOptions);
             if (meetingResponse?.HasMeeting != true || meetingResponse.Meeting == null)
             {
@@ -108,18 +115,29 @@ public sealed class MeetingSyncService
 
             var detailsPath = Path.Combine(folder, "meeting-details.json");
             var detailsJson = JsonSerializer.Serialize(meeting, _jsonOptions);
-            await File.WriteAllTextAsync(detailsPath, detailsJson);
+            File.WriteAllText(detailsPath, detailsJson);
 
-            var startLocal = DateTime.ParseExact(
-                $"{meeting.Date} {meeting.StartTime}",
-                "yyyy-MM-dd HH:mm:ss",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.AssumeLocal);
-            var endLocal = DateTime.ParseExact(
-                $"{meeting.Date} {meeting.EndTime}",
-                "yyyy-MM-dd HH:mm:ss",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.AssumeLocal);
+            if (!DateTime.TryParseExact(
+                    $"{meeting.Date} {meeting.StartTime}",
+                    "yyyy-MM-dd HH:mm:ss",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeLocal,
+                    out var startLocal))
+            {
+                ErrorOccurred?.Invoke(this, $"Sync failed: invalid meeting start '{meeting.Date} {meeting.StartTime}'.");
+                return;
+            }
+
+            if (!DateTime.TryParseExact(
+                    $"{meeting.Date} {meeting.EndTime}",
+                    "yyyy-MM-dd HH:mm:ss",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeLocal,
+                    out var endLocal))
+            {
+                ErrorOccurred?.Invoke(this, $"Sync failed: invalid meeting end '{meeting.Date} {meeting.EndTime}'.");
+                return;
+            }
 
             _lastMeetingVersion = version;
             _lastMeetingId = meeting.RoomBookingId;
@@ -155,8 +173,8 @@ public sealed class MeetingSyncService
         var safeFileName = MakeSafeFileName(document.OriginalFileName);
         var targetPath = Path.Combine(folder, safeFileName);
 
-        await using var source = await response.Content.ReadAsStreamAsync();
-        await using var destination = File.Create(targetPath);
+        using var source = await response.Content.ReadAsStreamAsync();
+        using var destination = File.Create(targetPath);
         await source.CopyToAsync(destination);
     }
 
@@ -190,7 +208,7 @@ public sealed class MeetingSyncService
         public string Date { get; set; } = string.Empty;
         public string StartTime { get; set; } = string.Empty;
         public string EndTime { get; set; } = string.Empty;
-        public List<MeetingDocument> Documents { get; set; } = [];
+        public List<MeetingDocument> Documents { get; set; } = new List<MeetingDocument>();
     }
 }
 
@@ -203,11 +221,31 @@ public sealed class MeetingDocument
     public DateTime UploadedAtUtc { get; set; }
 }
 
-public sealed record MeetingSnapshot(
-    int BookingId,
-    string Title,
-    string Note,
-    string CreatorDisplay,
-    DateTime StartLocal,
-    DateTime EndLocal,
-    string DownloadFolder);
+public sealed class MeetingSnapshot
+{
+    public MeetingSnapshot(
+        int bookingId,
+        string title,
+        string note,
+        string creatorDisplay,
+        DateTime startLocal,
+        DateTime endLocal,
+        string downloadFolder)
+    {
+        BookingId = bookingId;
+        Title = title;
+        Note = note;
+        CreatorDisplay = creatorDisplay;
+        StartLocal = startLocal;
+        EndLocal = endLocal;
+        DownloadFolder = downloadFolder;
+    }
+
+    public int BookingId { get; }
+    public string Title { get; }
+    public string Note { get; }
+    public string CreatorDisplay { get; }
+    public DateTime StartLocal { get; }
+    public DateTime EndLocal { get; }
+    public string DownloadFolder { get; }
+}

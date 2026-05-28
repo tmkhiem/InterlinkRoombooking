@@ -33,7 +33,12 @@ public sealed class SettingsStore
 
     public void Save(ClientSettings settings)
     {
-        var directory = Path.GetDirectoryName(ConfigPath)!;
+        var directory = Path.GetDirectoryName(ConfigPath);
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            return;
+        }
+
         Directory.CreateDirectory(directory);
 
         var json = JsonSerializer.Serialize(settings, _jsonOptions);

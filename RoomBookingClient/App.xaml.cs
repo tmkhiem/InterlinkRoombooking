@@ -14,7 +14,7 @@ public partial class App : Application
     private readonly DispatcherTimer _meetingWarningTimer;
     private readonly SingleInstanceManager _singleInstanceManager;
 
-    private NotifyIcon? _trayIcon;
+    private Forms.NotifyIcon? _trayIcon;
     private ConfigWindow? _configWindow;
     private MeetingDetailsWindow? _meetingDetailsWindow;
     private OvertimeWarningWindow? _warningWindow;
@@ -196,7 +196,6 @@ public partial class App : Application
 
     private void ExitApplication()
     {
-        _isShuttingDown = true;
         if (_configWindow != null)
         {
             _configWindow.AllowClose = true;
