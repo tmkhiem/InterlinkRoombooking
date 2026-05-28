@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 
 namespace RoomBookingClient;
 
 public partial class ConfigWindow : Window
 {
+    private const int MaxLogEntries = 300;
+    private readonly Queue<string> _logEntries = new();
+
     public bool AllowClose { get; set; }
 
     public event EventHandler<ClientSettings>? SaveRequested;
@@ -15,12 +19,25 @@ public partial class ConfigWindow : Window
     {
         InitializeComponent();
         ApplySettings(settings);
-        SetStatus("Running in tray mode.");
+        SetStatus("Đang chạy dưới khay hệ thống.");
     }
 
     public void SetStatus(string message)
     {
         StatusTextBlock.Text = message;
+    }
+
+    public void AppendLog(string message)
+    {
+        var entry = $"[{DateTime.Now:HH:mm:ss}] {message}";
+        _logEntries.Enqueue(entry);
+        while (_logEntries.Count > MaxLogEntries)
+        {
+            _logEntries.Dequeue();
+        }
+
+        LogTextBox.Text = string.Join(Environment.NewLine, _logEntries);
+        LogTextBox.ScrollToEnd();
     }
 
     private void ApplySettings(ClientSettings settings)
@@ -34,7 +51,7 @@ public partial class ConfigWindow : Window
     {
         if (!int.TryParse(RoomNumberTextBox.Text.Trim(), out var room) || room < 1 || room > 3)
         {
-            SetStatus("Room number must be 1, 2, or 3.");
+            SetStatus("Số phòng phải là 1, 2 hoặc 3.");
             return;
         }
 
@@ -46,14 +63,14 @@ public partial class ConfigWindow : Window
         };
 
         SaveRequested?.Invoke(this, settings);
-        SetStatus("Saved. Syncing current meeting...");
+        SetStatus("Đã lưu. Đang đồng bộ cuộc họp hiện tại...");
         HideToTray();
     }
 
     private void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
         RefreshRequested?.Invoke(this, EventArgs.Empty);
-        SetStatus("Refreshing...");
+        SetStatus("Đang làm mới...");
     }
 
     private void TestWarningButton_Click(object sender, RoutedEventArgs e)

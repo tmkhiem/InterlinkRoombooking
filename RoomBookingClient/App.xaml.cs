@@ -43,17 +43,21 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        LogVerbose("Khởi động ứng dụng khách.");
 
         TempMeetingStorage.DeleteRoot();
+        LogVerbose("Đã xóa dữ liệu cuộc họp tạm.");
 
         if (!_singleInstanceManager.TryStart(() => Dispatcher.Invoke(ShowDashboard)))
         {
+            LogVerbose("Phát hiện phiên đang chạy, gửi tín hiệu mở bảng điều khiển.");
             _singleInstanceManager.SignalRunningInstance();
             Shutdown();
             return;
         }
 
         _settings = _settingsStore.Load();
+        LogVerbose($"Đã tải cấu hình. Máy chủ='{_settings.ServerUrl}', phòng={_settings.RoomNumber}.");
 
         _configWindow = new ConfigWindow(_settings)
         {
@@ -63,24 +67,34 @@ public partial class App : Application
         };
 
         _configWindow.SaveRequested += OnConfigSaveRequested;
-        _configWindow.RefreshRequested += (_, _) => _meetingSyncService.TriggerRefresh();
+        _configWindow.RefreshRequested += (_, _) =>
+        {
+            LogVerbose("Người dùng yêu cầu làm mới thủ công.");
+            _meetingSyncService.TriggerRefresh();
+        };
         _configWindow.TestWarningRequested += (_, _) => ShowWarning(true);
+        _configWindow.AppendLog("Bảng cấu hình đã sẵn sàng.");
 
         _meetingDetailsWindow = new MeetingDetailsWindow();
         _meetingDetailsWindow.Hide();
+        LogVerbose("Đã khởi tạo cửa sổ chi tiết cuộc họp.");
 
         InitializeTrayIcon();
 
         _meetingSyncService.MeetingUpdated += OnMeetingUpdated;
         _meetingSyncService.ErrorOccurred += OnMeetingError;
+        _meetingSyncService.LogOccurred += (_, message) => LogVerbose(message);
         _meetingSyncService.Start(() => _settings);
+        LogVerbose("Đã bắt đầu dịch vụ đồng bộ cuộc họp.");
 
         _windowVisibilityTimer.Start();
         _meetingWarningTimer.Start();
+        LogVerbose("Đã bật các bộ đếm thời gian nền.");
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        LogVerbose("Đang tắt ứng dụng khách.");
         _meetingWarningTimer.Stop();
         _windowVisibilityTimer.Stop();
         _meetingSyncService.Stop();
@@ -103,18 +117,21 @@ public partial class App : Application
         };
 
         var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("Open dashboard", null, (_, _) => ShowDashboard());
-        menu.Items.Add("Exit", null, (_, _) => ExitApplication());
+        menu.Items.Add("Mở bảng điều khiển", null, (_, _) => ShowDashboard());
+        menu.Items.Add("Thoát", null, (_, _) => ExitApplication());
 
         _trayIcon.ContextMenuStrip = menu;
         _trayIcon.DoubleClick += (_, _) => ShowDashboard();
+        LogVerbose("Đã khởi tạo biểu tượng khay hệ thống.");
     }
 
     private void OnConfigSaveRequested(object? sender, ClientSettings settings)
     {
+        LogVerbose($"Đang lưu cấu hình mới. Máy chủ='{settings.ServerUrl}', phòng={settings.RoomNumber}.");
         _settings = settings;
         _settingsStore.Save(settings);
         _meetingSyncService.TriggerRefresh();
+        LogVerbose("Đã lưu cấu hình và yêu cầu đồng bộ ngay.");
     }
 
     private void OnMeetingUpdated(object? sender, MeetingSnapshot? snapshot)
@@ -123,12 +140,16 @@ public partial class App : Application
         {
             _activeMeeting = snapshot;
             _meetingDetailsWindow?.SetMeeting(snapshot);
+            LogVerbose(snapshot == null
+                ? "Không có cuộc họp đang diễn ra."
+                : $"Đã cập nhật cuộc họp '{snapshot.Title}' từ {snapshot.StartLocal:HH:mm} đến {snapshot.EndLocal:HH:mm}.");
 
             if (snapshot == null)
             {
                 _warningShownForBookingId = null;
                 _warningWindow?.Close();
                 _warningWindow = null;
+                LogVerbose("Đã đặt lại trạng thái cảnh báo quá giờ.");
             }
 
             UpdateMeetingWindowVisibility();
@@ -137,6 +158,7 @@ public partial class App : Application
 
     private void OnMeetingError(object? sender, string message)
     {
+        LogVerbose(message);
         Dispatcher.Invoke(() => _configWindow?.SetStatus(message));
     }
 
@@ -163,13 +185,14 @@ public partial class App : Application
     private void ShowWarning(bool isTest)
     {
         var message = isTest
-            ? "Test warning: meeting overtime notification."
-            : "Current meeting has exceeded its allotted time.";
+            ? "Cảnh báo thử nghiệm: thông báo cuộc họp quá giờ."
+            : "Cuộc họp hiện tại đã vượt quá thời lượng được cấp.";
 
         _warningWindow?.Close();
         _warningWindow = new OvertimeWarningWindow();
         _warningWindow.SetMessage(message);
         _warningWindow.Show();
+        LogVerbose(isTest ? "Đã hiển thị cảnh báo thử nghiệm." : "Đã hiển thị cảnh báo cuộc họp quá giờ.");
 
         if (!isTest && _activeMeeting != null)
         {
@@ -187,6 +210,7 @@ public partial class App : Application
         if (!_configWindow.IsVisible)
         {
             _configWindow.Show();
+            LogVerbose("Đã hiển thị bảng điều khiển.");
         }
 
         _configWindow.ShowInTaskbar = true;
@@ -196,6 +220,7 @@ public partial class App : Application
 
     private void ExitApplication()
     {
+        LogVerbose("Người dùng yêu cầu thoát ứng dụng.");
         if (_configWindow != null)
         {
             _configWindow.AllowClose = true;
@@ -230,14 +255,28 @@ public partial class App : Application
         }
 
         var workArea = SystemParameters.WorkArea;
-        _meetingDetailsWindow.Left = workArea.Right - _meetingDetailsWindow.Width - 16;
-        _meetingDetailsWindow.Top = workArea.Bottom - _meetingDetailsWindow.Height - 16;
+        _meetingDetailsWindow.Width = Math.Max(600, Math.Min(980, workArea.Width * 0.48));
+        _meetingDetailsWindow.Height = Math.Max(260, Math.Min(420, workArea.Height * 0.35));
+        _meetingDetailsWindow.Left = workArea.Left + 16;
+        _meetingDetailsWindow.Top = workArea.Top + 16;
 
         if (!_meetingDetailsWindow.IsVisible)
         {
             _meetingDetailsWindow.Show();
+            LogVerbose("Đã hiển thị cửa sổ chi tiết cuộc họp.");
         }
 
         _meetingDetailsWindow.SendToBottom();
+    }
+
+    private void LogVerbose(string message)
+    {
+        if (Dispatcher.CheckAccess())
+        {
+            _configWindow?.AppendLog(message);
+            return;
+        }
+
+        Dispatcher.Invoke(() => _configWindow?.AppendLog(message));
     }
 }

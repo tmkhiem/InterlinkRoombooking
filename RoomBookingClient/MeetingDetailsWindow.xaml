@@ -1,35 +1,64 @@
 <Window x:Class="RoomBookingClient.MeetingDetailsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Meeting details"
-        Width="460"
-        Height="230"
+        Title="Chi tiết cuộc họp"
+        Width="760"
+        Height="320"
+        MinWidth="600"
+        MinHeight="260"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
-        WindowStyle="ToolWindow"
+        WindowStyle="None"
+        ShowActivated="False"
         Topmost="False"
-        WindowStartupLocation="Manual">
-    <Border Padding="14" Background="#FFF9FBFF" BorderBrush="#FFC7D5EC" BorderThickness="1">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        WindowStartupLocation="Manual"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+    <Viewbox Stretch="Fill" StretchDirection="Both">
+        <Border Width="760"
+                Height="320"
+                Padding="24"
+                Background="#FFF9FBFF"
+                BorderBrush="#FFC7D5EC"
+                BorderThickness="1"
+                CornerRadius="18">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <TextBlock x:Name="TitleText" FontSize="18" FontWeight="SemiBold" Text="No active meeting" />
-            <TextBlock x:Name="TimeText" Grid.Row="1" Margin="0,8,0,0" />
-            <TextBlock x:Name="HostText" Grid.Row="2" Margin="0,4,0,0" />
-            <TextBlock x:Name="NoteText" Grid.Row="3" Margin="0,8,0,0" TextWrapping="Wrap" />
+                <TextBlock x:Name="TitleText"
+                           FontSize="28"
+                           FontWeight="SemiBold"
+                           Text="Không có cuộc họp đang diễn ra" />
+                <TextBlock x:Name="TimeText"
+                           Grid.Row="1"
+                           Margin="0,14,0,0"
+                           FontSize="18" />
+                <TextBlock x:Name="HostText"
+                           Grid.Row="2"
+                           Margin="0,8,0,0"
+                           FontSize="18" />
+                <ScrollViewer Grid.Row="3"
+                              Margin="0,14,0,0"
+                              VerticalScrollBarVisibility="Auto">
+                    <TextBlock x:Name="NoteText"
+                               FontSize="18"
+                               TextWrapping="Wrap" />
+                </ScrollViewer>
 
-            <Button Grid.Row="4"
-                    Width="170"
-                    Height="30"
-                    HorizontalAlignment="Right"
-                    Content="Open uploaded files"
-                    Click="OpenFolderButton_Click" />
-        </Grid>
-    </Border>
+                <Button Grid.Row="4"
+                        Width="240"
+                        Height="46"
+                        Margin="0,18,0,0"
+                        HorizontalAlignment="Right"
+                        FontSize="16"
+                        Content="Mở tệp đã tải lên"
+                        Click="OpenFolderButton_Click" />
+            </Grid>
+        </Border>
+    </Viewbox>
 </Window>

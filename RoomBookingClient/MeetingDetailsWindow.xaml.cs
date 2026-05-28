@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Input;
 
 namespace RoomBookingClient;
 
@@ -19,7 +20,7 @@ public partial class MeetingDetailsWindow : Window
     {
         if (snapshot == null)
         {
-            TitleText.Text = "No active meeting";
+            TitleText.Text = "Không có cuộc họp đang diễn ra";
             TimeText.Text = string.Empty;
             HostText.Text = string.Empty;
             NoteText.Text = string.Empty;
@@ -28,10 +29,18 @@ public partial class MeetingDetailsWindow : Window
         }
 
         TitleText.Text = snapshot.Title;
-        TimeText.Text = $"Time: {snapshot.StartLocal:HH:mm} - {snapshot.EndLocal:HH:mm}";
-        HostText.Text = $"Booked by: {snapshot.CreatorDisplay}";
-        NoteText.Text = string.IsNullOrWhiteSpace(snapshot.Note) ? "" : $"Note: {snapshot.Note}";
+        TimeText.Text = $"Thời gian: {snapshot.StartLocal:HH:mm} - {snapshot.EndLocal:HH:mm}";
+        HostText.Text = $"Người đặt: {snapshot.CreatorDisplay}";
+        NoteText.Text = string.IsNullOrWhiteSpace(snapshot.Note) ? string.Empty : $"Ghi chú: {snapshot.Note}";
         _folderPath = snapshot.DownloadFolder;
+    }
+
+    private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount >= 2)
+        {
+            Hide();
+        }
     }
 
     private void OpenFolderButton_Click(object sender, RoutedEventArgs e)

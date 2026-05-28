@@ -24,6 +24,7 @@ public sealed class MeetingSyncService
 
     public event EventHandler<MeetingSnapshot?>? MeetingUpdated;
     public event EventHandler<string>? ErrorOccurred;
+    public event EventHandler<string>? LogOccurred;
 
     public MeetingSyncService()
     {
@@ -35,10 +36,12 @@ public sealed class MeetingSyncService
     {
         _settingsProvider = settingsProvider;
         _timer.Change(TimeSpan.Zero, TimeSpan.FromSeconds(30));
+        Log("Đã lên lịch đồng bộ mỗi 30 giây.");
     }
 
     public void Stop()
     {
+        Log("Đang dừng dịch vụ đồng bộ.");
         _timer.Change(Timeout.Infinite, Timeout.Infinite);
 
         while (Interlocked.CompareExchange(ref _refreshInProgress, 0, 0) == 1)
@@ -48,10 +51,12 @@ public sealed class MeetingSyncService
 
         _timer.Dispose();
         _httpClient.Dispose();
+        Log("Đã dừng dịch vụ đồng bộ.");
     }
 
     public void TriggerRefresh()
     {
+        Log("Đã yêu cầu đồng bộ thủ công.");
         _ = RefreshAsync();
     }
 
@@ -59,33 +64,39 @@ public sealed class MeetingSyncService
     {
         if (Interlocked.Exchange(ref _refreshInProgress, 1) == 1)
         {
+            Log("Bỏ qua lần đồng bộ vì một tiến trình khác vẫn đang chạy.");
             return;
         }
 
         try
         {
+            Log("Bắt đầu đồng bộ cuộc họp.");
             var settings = _settingsProvider?.Invoke();
             if (settings == null)
             {
+                Log("Không có cấu hình để đồng bộ.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(settings.ServerUrl) || string.IsNullOrWhiteSpace(settings.ApiKey))
             {
+                Log("Thiếu URL máy chủ hoặc khóa API, xóa cuộc họp hiện tại.");
                 MeetingUpdated?.Invoke(this, null);
                 return;
             }
 
             var baseUrl = settings.ServerUrl.Trim().TrimEnd('/');
             var uri = $"{baseUrl}/api/client/current-meeting?room={settings.RoomNumber}";
+            Log($"Đang tải thông tin cuộc họp từ '{uri}'.");
 
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Add("X-Api-Key", settings.ApiKey);
             using var response = await _httpClient.SendAsync(request);
+            Log($"Máy chủ trả về {(int)response.StatusCode} {response.ReasonPhrase}.");
 
             if (!response.IsSuccessStatusCode)
             {
-                ErrorOccurred?.Invoke(this, $"Sync failed: {(int)response.StatusCode} {response.ReasonPhrase}");
+                ErrorOccurred?.Invoke(this, $"Đồng bộ thất bại: {(int)response.StatusCode} {response.ReasonPhrase}");
                 return;
             }
 
@@ -93,6 +104,7 @@ public sealed class MeetingSyncService
             var meetingResponse = await JsonSerializer.DeserializeAsync<CurrentMeetingResponse>(stream, _jsonOptions);
             if (meetingResponse?.HasMeeting != true || meetingResponse.Meeting == null)
             {
+                Log("Không có cuộc họp hiện tại từ máy chủ.");
                 _lastMeetingVersion = null;
                 _lastMeetingId = null;
                 TempMeetingStorage.DeleteCurrentMeetingFolder();
@@ -104,10 +116,12 @@ public sealed class MeetingSyncService
             var version = BuildMeetingVersion(meeting);
             if (_lastMeetingVersion == version && _lastMeetingId == meeting.RoomBookingId)
             {
+                Log($"Không có thay đổi cho cuộc họp #{meeting.RoomBookingId}.");
                 return;
             }
 
             var folder = TempMeetingStorage.CreateMeetingFolder(meeting.RoomBookingId);
+            Log($"Đã tạo thư mục tạm '{folder}'.");
             foreach (var document in meeting.Documents)
             {
                 await DownloadDocumentAsync(baseUrl, settings, meeting.RoomBookingId, document, folder);
@@ -116,6 +130,7 @@ public sealed class MeetingSyncService
             var detailsPath = Path.Combine(folder, "meeting-details.json");
             var detailsJson = JsonSerializer.Serialize(meeting, _jsonOptions);
             File.WriteAllText(detailsPath, detailsJson);
+            Log($"Đã lưu chi tiết cuộc họp vào '{detailsPath}'.");
 
             if (!DateTime.TryParseExact(
                     $"{meeting.Date} {meeting.StartTime}",
@@ -124,7 +139,7 @@ public sealed class MeetingSyncService
                     DateTimeStyles.AssumeLocal,
                     out var startLocal))
             {
-                ErrorOccurred?.Invoke(this, $"Sync failed: invalid meeting start '{meeting.Date} {meeting.StartTime}'.");
+                ErrorOccurred?.Invoke(this, $"Đồng bộ thất bại: thời gian bắt đầu không hợp lệ '{meeting.Date} {meeting.StartTime}'.");
                 return;
             }
 
@@ -135,12 +150,13 @@ public sealed class MeetingSyncService
                     DateTimeStyles.AssumeLocal,
                     out var endLocal))
             {
-                ErrorOccurred?.Invoke(this, $"Sync failed: invalid meeting end '{meeting.Date} {meeting.EndTime}'.");
+                ErrorOccurred?.Invoke(this, $"Đồng bộ thất bại: thời gian kết thúc không hợp lệ '{meeting.Date} {meeting.EndTime}'.");
                 return;
             }
 
             _lastMeetingVersion = version;
             _lastMeetingId = meeting.RoomBookingId;
+            Log($"Đã cập nhật ảnh chụp cuộc họp #{meeting.RoomBookingId}.");
 
             MeetingUpdated?.Invoke(this, new MeetingSnapshot(
                 meeting.RoomBookingId,
@@ -153,17 +169,19 @@ public sealed class MeetingSyncService
         }
         catch (Exception ex)
         {
-            ErrorOccurred?.Invoke(this, $"Sync failed: {ex.Message}");
+            ErrorOccurred?.Invoke(this, $"Đồng bộ thất bại: {ex.Message}");
         }
         finally
         {
             Interlocked.Exchange(ref _refreshInProgress, 0);
+            Log("Kết thúc chu kỳ đồng bộ.");
         }
     }
 
     private async Task DownloadDocumentAsync(string baseUrl, ClientSettings settings, int bookingId, MeetingDocument document, string folder)
     {
         var fileUrl = $"{baseUrl}/api/client/bookings/{bookingId}/documents/{document.BookingDocumentId}?room={settings.RoomNumber}";
+        Log($"Đang tải tệp '{document.OriginalFileName}' từ '{fileUrl}'.");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, fileUrl);
         request.Headers.Add("X-Api-Key", settings.ApiKey);
@@ -176,6 +194,7 @@ public sealed class MeetingSyncService
         using var source = await response.Content.ReadAsStreamAsync();
         using var destination = File.Create(targetPath);
         await source.CopyToAsync(destination);
+        Log($"Đã lưu tệp vào '{targetPath}'.");
     }
 
     private static string MakeSafeFileName(string fileName)
@@ -189,6 +208,11 @@ public sealed class MeetingSyncService
     {
         var docs = string.Join("|", meeting.Documents.Select(d => $"{d.BookingDocumentId}:{d.UploadedAtUtc:o}:{d.FileSizeBytes}"));
         return $"{meeting.RoomBookingId}:{meeting.Title}:{meeting.StartTime}:{meeting.EndTime}:{docs}";
+    }
+
+    private void Log(string message)
+    {
+        LogOccurred?.Invoke(this, message);
     }
 
     private sealed class CurrentMeetingResponse
